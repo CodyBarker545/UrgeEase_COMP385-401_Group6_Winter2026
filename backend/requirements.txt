@@ -1,7 +1,12 @@
+pandas
+numpy
+scikit-learn
+xgboost
+joblib
 langchain>=0.2.0
 langchain-community>=0.2.0
 langchain-core>=0.2.0
 langchain-text-splitters>=0.2.0
 faiss-cpu
-pytest
 python-dotenv
+pytest

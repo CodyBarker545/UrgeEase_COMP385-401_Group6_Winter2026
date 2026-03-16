@@ -17,7 +17,6 @@ PREREQUISITES
 Before installing, make sure you have:
 
 - Python 3.11 or 3.12 (recommended)
-- avoid python 3.14 for this project
 - Node.js 18 or higher
 - npm
 - Git
@@ -90,7 +89,7 @@ The frontend will be available at:
 ENVIRONMENT VARIABLES
 ------------------------------------------------------------
 
-If using Gemini API or Supabase, create a .env file in the appropriate folder.
+If using Gemini API, create a .env file in the appropriate folder.
 
 Example:
 
