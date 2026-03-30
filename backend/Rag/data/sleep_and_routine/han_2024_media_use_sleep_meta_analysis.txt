@@ -1,0 +1,36 @@
+Title: Electronic Media Use and Sleep Quality: Meta-Analysis
+
+Source:
+Han, X. et al. (2024)
+
+Summary:
+This meta-analysis examines the relationship between electronic media use, including social media and smartphones, and sleep quality. The results show a consistent negative relationship between media use and sleep, with problematic use having a stronger effect.
+
+Core Ideas:
+- Electronic media use significantly reduces sleep quality
+- Problematic use has stronger negative effects than general use
+- Sleep disruption increases with increased usage intensity
+
+Practical Strategies:
+- Reduce overall screen time
+- Avoid problematic or compulsive use patterns
+- Prioritize sleep over late-night media use
+- Establish structured bedtime routines
+
+Triggers:
+- Excessive screen time
+- Problematic or compulsive usage
+- Nighttime device use
+- Lack of routine
+
+Recovery Insights:
+- Problematic use has a stronger impact on sleep than general use :contentReference[oaicite:7]{index=7}
+- Sleep quality decreases as usage increases
+- Reducing usage improves sleep outcomes
+
+Tags:
+["sleep", "meta_analysis", "high_risk", "routine"]
+
+Recommended For:
+- Moderate addiction
+- High addiction

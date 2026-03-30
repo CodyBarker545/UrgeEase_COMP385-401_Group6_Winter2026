@@ -1,0 +1,45 @@
+Title: Youth, Smartphones and Social Media Use
+
+Source:
+Centre for Addiction and Mental Health (CAMH)
+
+Summary:
+This report presents current research on youth smartphone and social media use, focusing on how digital behaviors impact mental health, habits, and daily functioning. Smartphones are the primary way young people access social media, and excessive use has been linked to psychological distress, poor sleep, and reduced well-being. The report highlights the importance of monitoring usage, identifying patterns, and promoting balanced technology use.
+
+Core Ideas:
+- Smartphones are the main gateway to social media use among youth
+- High usage is associated with increased psychological distress
+- Problematic use is linked to poor sleep, anxiety, and reduced well-being
+- Behavior patterns and usage habits are critical in understanding addiction
+- Technology use should be balanced with offline activities
+
+Practical Strategies:
+- Track daily screen time and frequency of use
+- Identify patterns of excessive or problematic use
+- Set limits on screen time, especially before bedtime
+- Encourage balanced routines including offline activities
+- Reduce nighttime usage to improve sleep quality
+- Promote awareness of how usage affects mood and behavior
+- Use structured schedules to limit unregulated screen time
+
+Triggers:
+- Boredom
+- Habitual phone checking
+- Social pressure and fear of missing out (FoMO)
+- Nighttime use and lack of routine
+- Emotional distress (stress, anxiety)
+
+Recovery Insights:
+- Monitoring behavior is essential for understanding and reducing overuse
+- Excessive social media use is linked to mental health challenges such as anxiety and depression :contentReference[oaicite:0]{index=0}
+- Nighttime use significantly impacts sleep quality and overall well-being :contentReference[oaicite:1]{index=1}
+- Balanced use of technology improves mental health outcomes
+- Awareness and self-regulation are key components of recovery
+
+Tags:
+["habit_tracking", "trigger_tracking", "screen_time", "sleep", "moderate_risk", "high_risk"]
+
+Recommended For:
+- Low addiction (early awareness)
+- Moderate addiction
+- High addiction

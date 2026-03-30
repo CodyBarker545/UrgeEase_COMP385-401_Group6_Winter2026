@@ -20,7 +20,7 @@ def map_addiction_level(score: int) -> int:
     """Map Addicted_Score to 3 classes:
     0 = low (2-4)
     1 = mid (5-6)
-    2 = high (7-9)
+    2 = high (7-9) 
     """
     if 2 <= score <= 4:
         return 0

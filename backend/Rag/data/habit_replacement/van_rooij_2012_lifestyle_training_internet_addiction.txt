@@ -1,0 +1,44 @@
+Title: Treating Internet Addiction with Cognitive Behavioral Therapy: Lifestyle Training Approach
+
+Source:
+Van Rooij, A. J., Zinn, M. F., Schoenmakers, T. M., & Van de Mheen, D. (2012)
+
+Summary:
+This study evaluates a CBT-based “Lifestyle Training” program adapted from addiction treatment to address internet addiction. Therapists reported that the approach was effective in helping patients reduce internet use, improve self-control, and rebuild daily routines. The treatment focuses on behavior change, structured routines, and replacing excessive internet use with meaningful real-life activities.
+
+Core Ideas:
+- Internet addiction can be treated using adapted CBT addiction programs
+- Behavioral change is more effective than complete abstinence
+- Addiction is linked to lack of structure, poor habits, and emotional triggers
+- Real-life engagement is critical for recovery
+- Internet addiction often co-occurs with other psychological issues
+
+Practical Strategies:
+- Track internet usage using a daily log or diary
+- Establish a structured daily routine (sleep, work, activities)
+- Replace excessive internet use with offline activities (socializing, hobbies)
+- Increase real-life social interaction and responsibilities
+- Use time blocks to control internet access
+- Reduce unstructured free time that leads to overuse
+- Focus on constructive and intentional use of the internet
+
+Triggers:
+- Lack of daily structure
+- Excess free time
+- Social isolation
+- Emotional distress (anxiety, depression)
+- Preference for online interaction over real-life interaction
+
+Recovery Insights:
+- Monitoring behavior (e.g., usage diary) is critical for awareness and change
+- Building a structured daily routine significantly reduces addictive behavior
+- Full abstinence is not realistic; controlled use is the goal
+- Recovery improves when real-world engagement increases
+- Patients showed improved self-control and reduced internet use after treatment :contentReference[oaicite:0]{index=0}
+
+Tags:
+["cbt", "habit_replacement", "routine_building", "behavior_tracking", "moderate_risk", "high_risk"]
+
+Recommended For:
+- Moderate addiction
+- High addiction

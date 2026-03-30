@@ -1,0 +1,51 @@
+Title: Treatment Outcomes Using CBT-IA with Internet-Addicted Patients
+
+Source:
+Young, K. S. (2013)
+
+Summary:
+This study introduces and evaluates Cognitive Behavioral Therapy for Internet Addiction (CBT-IA), a specialized treatment model designed to address compulsive internet use. The model combines behavioral modification, cognitive restructuring, and harm reduction techniques. Results showed that CBT-IA was highly effective, with over 95% of patients managing symptoms after 12 weeks and 78% maintaining recovery after six months.
+
+Core Ideas:
+- CBT-IA is a specialized form of cognitive behavioral therapy for internet addiction
+- Internet addiction is similar to impulse-control disorders
+- Treatment must focus on controlled use, not total abstinence
+- Addiction is driven by compulsive behavior and cognitive distortions
+- Effective treatment requires addressing both behavior and underlying thoughts
+
+Practical Strategies:
+- Identify specific situations where compulsive internet use occurs
+- Set structured limits on internet usage
+- Replace compulsive use with healthier offline activities
+- Develop coping strategies for urges and cravings
+- Challenge irrational thoughts that justify excessive use
+- Build routines that reduce dependence on internet use
+- Gradually reduce usage instead of stopping abruptly
+
+Triggers:
+- Specific situations associated with compulsive use
+- Emotional distress (stress, anxiety, depression)
+- Habitual or automatic behavior patterns
+- Cognitive distortions (e.g., "I need to check this now")
+- Environmental cues (availability of devices, notifications)
+
+Recovery Insights:
+- CBT-IA follows three key phases:
+  1. Behavior Modification (control compulsive use)
+  2. Cognitive Restructuring (change harmful thoughts)
+  3. Harm Reduction (address underlying issues and prevent relapse)
+- Treatment typically lasts around 12 weeks
+- Long-term recovery depends on maintaining behavior and thought changes
+- Relapse prevention requires ongoing awareness and coping strategies
+- Most patients improve significantly with structured CBT intervention
+
+Evidence:
+- Over 95% of patients managed symptoms after 12 weeks
+- 78% maintained recovery after 6 months :contentReference[oaicite:0]{index=0}
+
+Tags:
+["cbt", "coping_strategies", "relapse_prevention", "behavior_modification", "cognitive_restructuring", "high_risk"]
+
+Recommended For:
+- Moderate addiction
+- High addiction

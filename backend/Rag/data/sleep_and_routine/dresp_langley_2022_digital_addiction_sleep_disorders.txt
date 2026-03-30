@@ -1,0 +1,37 @@
+Title: Digital Addiction and Sleep Disorders
+
+Source:
+Dresp-Langley, B. (2022)
+
+Summary:
+This paper explores the relationship between digital addiction, sleep disorders, and mental health. It highlights that insomnia and sleep disruption are not only consequences of addiction but can also act as triggers that reinforce addictive behaviors.
+
+Core Ideas:
+- Sleep disorders and addiction are strongly interconnected
+- Insomnia can act as both a trigger and a consequence of addiction
+- Poor sleep increases emotional vulnerability and compulsive behavior
+- Addiction, sleep problems, and depression form a reinforcing cycle
+
+Practical Strategies:
+- Improve sleep hygiene (consistent sleep schedule)
+- Reduce digital exposure before bedtime
+- Address emotional triggers contributing to poor sleep
+- Develop routines that separate technology use from sleep
+
+Triggers:
+- Insomnia
+- Late-night device use
+- Emotional distress (anxiety, depression)
+- Irregular sleep schedules
+
+Recovery Insights:
+- Sleep problems can trigger increased addictive behavior
+- Addiction and sleep issues form a reinforcing cycle :contentReference[oaicite:3]{index=3}
+- Improving sleep can significantly reduce addiction severity
+
+Tags:
+["sleep", "trigger_tracking", "mental_health", "high_risk"]
+
+Recommended For:
+- Moderate addiction
+- High addiction

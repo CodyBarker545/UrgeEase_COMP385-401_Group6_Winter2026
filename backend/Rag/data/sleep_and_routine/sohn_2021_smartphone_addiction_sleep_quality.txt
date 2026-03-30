@@ -1,0 +1,38 @@
+Title: The Association Between Smartphone Addiction and Sleep Quality
+
+Source:
+Sohn, S. Y. et al. (2021)
+
+Summary:
+This study investigates the relationship between smartphone addiction and sleep quality in young adults. Results show a strong association between excessive smartphone use and poor sleep outcomes. Individuals with higher levels of smartphone addiction are significantly more likely to experience sleep disturbances.
+
+Core Ideas:
+- Smartphone addiction is strongly associated with poor sleep quality
+- Addictive use leads to disrupted sleep patterns and reduced rest
+- Behavioral overuse contributes to insomnia and fatigue
+- Sleep problems worsen addiction cycles
+
+Practical Strategies:
+- Reduce screen time before sleep (especially 1–2 hours before bed)
+- Avoid phone use in bed
+- Set consistent sleep and wake times
+- Limit nighttime notifications
+- Establish a structured bedtime routine
+
+Triggers:
+- Nighttime phone use
+- Habitual late-night scrolling
+- Emotional dependence on devices
+- Lack of structured sleep routine
+
+Recovery Insights:
+- 68.7% of addicted users had poor sleep quality compared to lower rates in non-addicted users :contentReference[oaicite:1]{index=1}
+- Poor sleep both contributes to and results from addictive behavior
+- Improving sleep habits can reduce addiction severity
+
+Tags:
+["sleep", "routine", "night_usage", "high_risk", "trigger_tracking"]
+
+Recommended For:
+- Moderate addiction
+- High addiction

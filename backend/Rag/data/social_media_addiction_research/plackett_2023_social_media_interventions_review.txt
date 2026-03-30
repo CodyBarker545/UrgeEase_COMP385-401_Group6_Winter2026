@@ -1,0 +1,44 @@
+Title: The Impact of Social Media Use Interventions on Mental Well-Being: Systematic Review
+
+Source:
+Plackett, R., Blyth, A., & Schartau, P. (2023)
+
+Summary:
+This systematic review evaluates the effectiveness of different interventions designed to reduce problematic social media use and improve mental well-being in adults. The findings show that excessive social media use is often associated with poorer mental health outcomes such as depression, anxiety, stress, and loneliness. However, interventions—especially those based on therapeutic approaches like cognitive behavioral therapy (CBT)—can improve well-being.
+
+Core Ideas:
+- High social media use is linked to poorer mental well-being
+- Social media interventions can reduce negative mental health outcomes
+- Therapy-based interventions (e.g., CBT) are more effective than simple restriction or abstinence
+- Behavior change requires reflection, self-awareness, and structured intervention
+- Social media use has both positive and negative effects depending on usage patterns
+
+Practical Strategies:
+- Use structured interventions such as CBT-based programs
+- Reflect on how time is spent on social media
+- Reduce passive consumption (scrolling) and increase intentional use
+- Limit daily usage time instead of full abstinence
+- Participate in guided programs (e.g., counseling, group therapy)
+- Track time spent and evaluate its impact on mood and behavior
+- Improve offline social interactions and communication skills
+
+Triggers:
+- Excessive time spent on social media platforms
+- Passive scrolling behavior
+- Emotional reliance on social media
+- Social comparison and validation seeking
+- Lack of awareness of time usage
+
+Recovery Insights:
+- Therapy-based interventions showed the strongest improvements in mental well-being
+- 83% of therapy-based studies showed improvement compared to lower success rates for restriction or abstinence approaches :contentReference[oaicite:0]{index=0}
+- Simple reduction or "digital detox" alone produces mixed results
+- Behavior change is most effective when combined with reflection and structured support
+- Social media can have both benefits (social support) and harms depending on use patterns :contentReference[oaicite:1]{index=1}
+
+Tags:
+["interventions", "social_media_addiction", "mental_health", "cbt", "behavior_change", "moderate_risk", "high_risk"]
+
+Recommended For:
+- Moderate addiction
+- High addiction

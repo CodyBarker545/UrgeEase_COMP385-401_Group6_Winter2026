@@ -1,0 +1,40 @@
+Title: Internet Addiction and Its Cognitive Behavioral Therapy
+
+Source:
+Sungur, M. Z., Senormanci, O., & Konkan, R.
+
+Summary:
+This paper reviews how internet addiction is conceptualized and treated using cognitive behavioral therapy (CBT). Internet addiction shares similarities with substance addictions, including loss of control, compulsive behavior, and negative life consequences. Because complete abstinence from internet use is not realistic, treatment focuses on controlled and purposeful use rather than elimination.
+
+Core Ideas:
+- Internet addiction is a behavioral addiction similar to substance use disorders
+- CBT is the most widely used and effective treatment approach
+- Treatment focuses on modifying behavior and thought patterns
+- Controlled internet use is the goal, not total avoidance
+- Addiction is reinforced by habits, triggers, and cognitive distortions
+
+Practical Strategies:
+- Set structured time limits for internet and social media use
+- Identify and reduce unnecessary or impulsive usage
+- Replace excessive internet use with offline activities
+- Use goal-oriented internet usage instead of passive scrolling
+- Develop awareness of usage patterns and habits
+- Gradually reduce usage instead of stopping suddenly
+- Prioritize real-life responsibilities before online activities
+
+Triggers:
+- Boredom
+- Stress or negative emotions
+- Habitual checking behavior
+- Environmental cues (phone notifications, idle time)
+- Escapism from real-life problems
+
+Recovery Insights:
+- Internet addiction cannot be treated by complete avoidance, unlike substances
+- Long-term success depends on building controlled and intentional use habits
+- Cognitive restructuring helps individuals recognize harmful thought patterns
+- Behavioral modification helps break automatic usage cycles
+- Ongoing self-awareness is critical for preventing relapse
+
+Tags:
+["cbt", "coping_strategies", "behavior_control", "time_management", "moderate_risk", "high_risk"]

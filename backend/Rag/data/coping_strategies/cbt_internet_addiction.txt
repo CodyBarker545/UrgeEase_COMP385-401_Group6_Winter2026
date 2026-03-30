@@ -1,0 +1,96 @@
+Title: Cognitive Behavioral Therapy for Internet Addiction (CBT-IA)
+Source: Young (2013) - Treatment outcomes using CBT-IA
+Category: coping_strategies
+
+------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------
+Cognitive Behavioral Therapy for Internet Addiction (CBT-IA) is an effective treatment approach designed to reduce compulsive internet and social media use.
+
+The therapy focuses on understanding the relationship between thoughts, emotions, and behaviors, and helps individuals regain control over their internet usage.
+
+Studies show that:
+- Over 95% of patients improved after 12 weeks of treatment
+- 78% maintained recovery after 6 months :contentReference[oaicite:0]{index=0}
+
+------------------------------------------------------------
+CORE IDEAS
+------------------------------------------------------------
+Internet addiction is driven by:
+- compulsive behavior patterns
+- negative thought patterns
+- emotional triggers (stress, loneliness, boredom)
+
+CBT works by:
+- increasing awareness of behavior
+- changing harmful thinking patterns
+- building healthier habits
+
+------------------------------------------------------------
+CBT-IA MODEL (3 PHASES)
+------------------------------------------------------------
+
+1. BEHAVIOR MODIFICATION
+- Identify problematic internet use patterns
+- Reduce time spent online
+- Set limits and schedules
+- Replace excessive usage with healthier activities
+
+2. COGNITIVE RESTRUCTURING
+- Identify negative thoughts driving usage
+- Challenge irrational beliefs (e.g., "I need to check constantly")
+- Replace with healthier thinking patterns
+
+3. HARM REDUCTION THERAPY (HRT)
+- Address underlying psychological issues (stress, anxiety, depression)
+- Improve relationships and social interactions
+- Prevent relapse by building long-term coping strategies :contentReference[oaicite:1]{index=1}
+
+------------------------------------------------------------
+PRACTICAL STRATEGIES
+------------------------------------------------------------
+
+- Track daily internet/social media usage
+- Set fixed time limits for usage
+- Avoid high-risk triggers (late night use, boredom)
+- Create alternative activities (exercise, hobbies, social interaction)
+- Use journaling to reflect on usage patterns
+- Practice mindfulness and awareness of urges
+- Improve time management habits
+- Build offline routines (especially before sleep)
+
+------------------------------------------------------------
+TRIGGERS IDENTIFIED
+------------------------------------------------------------
+
+Common triggers for excessive internet use:
+- boredom
+- stress
+- emotional discomfort
+- social isolation
+- avoidance of responsibilities
+
+------------------------------------------------------------
+RECOVERY INSIGHTS
+------------------------------------------------------------
+
+- Recovery is a gradual process
+- Relapse can occur and should be expected
+- Long-term success depends on:
+  - behavior awareness
+  - consistent habit change
+  - emotional regulation
+
+------------------------------------------------------------
+IMPORTANT NOTES FOR AI SYSTEM
+------------------------------------------------------------
+
+- Do NOT diagnose users
+- Provide supportive and non-judgmental suggestions
+- Focus on small, practical behavior changes
+- Encourage awareness and self-reflection
+- Suggest gradual reduction, not immediate elimination
+
+------------------------------------------------------------
+END OF FILE
+------------------------------------------------------------
