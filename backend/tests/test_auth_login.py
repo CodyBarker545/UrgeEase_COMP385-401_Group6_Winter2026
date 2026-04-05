@@ -19,7 +19,6 @@ def client():
     with app.test_client() as client:
         yield client
 
-
 def cleanup_user(email: str):
     db = get_db()
     db.users.delete_many({"email": email})
