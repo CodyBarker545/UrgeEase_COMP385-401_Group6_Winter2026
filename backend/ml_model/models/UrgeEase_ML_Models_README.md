@@ -1,10 +1,10 @@
-
 # UrgeEase Machine Learning Models
 
 ## Overview
-The UrgeEase application uses machine learning models to detect potential **social media addiction risk** based on behavioral and survey data.
 
-Two datasets were used to train and evaluate classification models:
+The UrgeEase application uses machine learning models to detect and track **social media addiction severity** based on behavioral and survey data.
+
+Two datasets were used:
 
 1. Social Media Addiction vs Relationships Dataset
 2. Social Media Users Behavioral Survey Dataset
@@ -12,21 +12,41 @@ Two datasets were used to train and evaluate classification models:
 Two machine learning algorithms were evaluated:
 
 - Random Forest
-- XGBoost (Extreme Gradient Boosting)
+- XGBoost
 
-The models classify users into three addiction risk levels:
+---
 
-0 = Low Risk  
-1 = Moderate Risk  
-2 = High Risk  
+# Updated Design (IMPORTANT)
 
-These predictions are then used by the UrgeEase system to trigger AI-based behavioral recommendations.
+Originally, models classified users into 3 risk levels:
+
+0 = Low  
+1 = Moderate  
+2 = High
+
+### Current Approach
+
+The system now predicts a **raw addiction score (2–9)** instead of only categories.
+
+This allows:
+
+- finer-grained feedback
+- progress tracking over time
+- better personalization
+
+The score is still mapped to risk levels for interpretation:
+
+| Score Range | Risk Level |
+| ----------- | ---------- |
+| 2–4         | Low        |
+| 5–6         | Moderate   |
+| 7–9         | High       |
 
 ---
 
 # Dataset 1 – Social Media Addiction vs Relationships
 
-This dataset contains structured information about students and their social media usage patterns, including mental health indicators and academic impacts.
+This dataset contains structured information about students and their social media usage patterns.
 
 ### Features Used
 
@@ -41,30 +61,28 @@ This dataset contains structured information about students and their social med
 
 ### Removed Columns
 
-Student_ID  
-Academic_Level  
-Country  
-Most_Used_Platform  
+- Student_ID
+- Academic_Level
+- Country
+- Most_Used_Platform
 
 ### Target Variable
 
-The dataset contains an **Addicted_Score (2–9)** which was mapped into classification labels.
+Previously:
 
-Score Range | Addiction Level
------------ | ---------------
-2–4 | Low
-5–6 | Moderate
-7–9 | High
+- Addiction_Level (0–2)
+
+Now:
+
+- **Addicted_Score (2–9)** is used directly
 
 ---
 
 # Dataset 2 – Social Media Users Behavioral Survey
 
-This dataset contains survey responses about social media behavior and mental health indicators.
+This dataset contains behavioral and psychological indicators.
 
-Survey responses were converted into numerical features representing behavioral indicators of social media addiction.
-
-### Example Features
+### Features
 
 Behavior indicators:
 
@@ -94,209 +112,173 @@ Demographics:
 
 # Behavioral Dependence Score
 
-The behavioral survey dataset did **not contain an addiction label**.
+Since Dataset 2 had no labels, a **weighted behavioral score** was created.
 
-To train a machine learning model, a **Behavioral Dependence Score** was created using weighted behavioral indicators commonly associated with social media addiction.
+### Weighted Features
 
-These indicators reflect behavioral addiction characteristics such as:
-
-- compulsive usage
-- withdrawal symptoms
-- emotional dependence
-- sleep disruption
-- concentration difficulty
-
-### Weighted Behavioral Indicators
-
-Each behavioral feature was assigned a weight based on its relative importance.
-
-| Feature | Weight |
-|-------|-------|
-| Mindless_Use | 1.2 |
-| Distraction_When_Busy | 1.1 |
-| Restless_Without_SM | 1.3 |
-| Concentration_Difficulty | 1.2 |
-| Depression_Frequency | 1.2 |
-| Sleep_Issues | 1.1 |
-| Distractibility_Score | 1.0 |
-| Validation_Seeking | 1.0 |
-| Interest_Fluctuation | 1.0 |
-| Social_Comparison | 0.9 |
-| Worry_Score | 0.9 |
-
-The final score is calculated using a **weighted average** of these behavioral features.
+| Feature                  | Weight |
+| ------------------------ | ------ |
+| Mindless_Use             | 1.2    |
+| Distraction_When_Busy    | 1.1    |
+| Restless_Without_SM      | 1.3    |
+| Concentration_Difficulty | 1.2    |
+| Depression_Frequency     | 1.2    |
+| Sleep_Issues             | 1.1    |
+| Distractibility_Score    | 1.0    |
+| Validation_Seeking       | 1.0    |
+| Interest_Fluctuation     | 1.0    |
+| Social_Comparison        | 0.9    |
+| Worry_Score              | 0.9    |
 
 ### Risk Mapping
 
-Score | Risk Level
------ | ----------
-< 2.5 | Low
-2.5 – 3.5 | Moderate
-> 3.5 | High
-
-This generated the **Dependence_Risk** classification label used to train the model.
+| Score     | Risk Level |
+| --------- | ---------- |
+| < 2.5     | Low        |
+| 2.5 – 3.5 | Moderate   |
+| > 3.5     | High       |
 
 ---
 
 # Machine Learning Pipeline
 
-Both models use a Scikit-Learn pipeline consisting of the following stages.
+### Preprocessing
 
-### Data Preprocessing
+Numeric:
 
-Numeric features:
 - Median imputation
 - Standard scaling
 
-Categorical features:
+Categorical:
+
 - Most frequent imputation
 - One-Hot Encoding
 
 ### Train/Test Split
 
-80% Training  
-20% Testing  
+- 80% Training
+- 20% Testing
 
-Stratified sampling preserves class balance.
+Note:
+
+- Stratification removed for score model due to class imbalance
 
 ---
 
-# Models Evaluated
+# Models
 
 ## Random Forest
 
-Random Forest builds multiple decision trees and aggregates their predictions.
-
-Advantages:
-
-- Handles noisy survey data well
-- Robust against overfitting
-- Works well with mixed feature types
-- Performs well on behavioral datasets
-
----
+- Robust to noisy behavioral data
+- Handles mixed feature types
+- Stable performance
 
 ## XGBoost
 
-XGBoost builds trees sequentially to reduce prediction errors.
-
-Advantages:
-
-- High performance on structured datasets
-- Efficient and scalable
-- Captures complex nonlinear relationships
+- Strong performance on structured datasets
+- Captures complex relationships
 
 ---
 
-# Model Results
+# Model Results (Updated)
 
-## Dataset: Social Media Addiction vs Relationships
+## Addiction Score Model (1–9)
 
-### Random Forest
 Accuracy: **94.33%**
 
-Confusion Matrix:
+### Key Observations
 
-[[17 3 0]  
- [3 35 1]  
- [0 1 81]]
+- Model performs well on common scores (5–8)
+- Rare scores (e.g., 2) are poorly learned due to imbalance
+- Most errors occur between **adjacent scores** (e.g., 6 → 5 or 7)
 
-### XGBoost
-Accuracy: **94.33%**
-
-Confusion Matrix:
-
-[[17 3 0]  
- [3 35 1]  
- [0 1 81]]
-
-Both models performed almost identically.
+This indicates the model captures **relative severity effectively**.
 
 ---
 
-## Dataset: Social Media Users Behavioral Survey
+# Testing (NEW)
 
-### Random Forest (Weighted Behavioral Score)
-Accuracy: **85.42%**
+Pytest-based validation was implemented.
 
-Confusion Matrix:
+### Tests include:
 
-[[13 7 0]  
- [0 39 0]  
- [0 7 30]]
+- Model loading
+- Prediction correctness
+- Probability output validation
+- Deterministic predictions
+- Input schema validation
 
-### XGBoost
-Accuracy: **83.33%**
+This ensures:
 
-Confusion Matrix:
-
-[[15 5 0]  
- [3 33 4]  
- [0 4 32]]
+- reliability
+- consistent outputs
+- protection against invalid inputs
 
 ---
 
 # Model Comparison
 
-Dataset | Model | Accuracy
-------- | ----- | --------
-Relationships | Random Forest | 94.33%
-Relationships | XGBoost | 94.33%
-Users Survey (Weighted) | Random Forest | 85.42%
-Users Survey | XGBoost | 83.33%
-
-Key observations:
-
-- Both algorithms perform equally well on the structured dataset.
-- Random Forest performs better on behavioral survey data.
-- Survey datasets contain more noise and Random Forest handles this effectively.
+| Dataset               | Model         | Accuracy |
+| --------------------- | ------------- | -------- |
+| Relationships (Score) | Random Forest | 94.33%   |
+| Users Survey          | Random Forest | 85.42%   |
+| Users Survey          | XGBoost       | 83.33%   |
 
 ---
 
 # Final Model Choice
 
-For the UrgeEase application, the **Random Forest model trained on the Social Media Users dataset** is used.
+For UrgeEase:
 
-Reasons:
+### Primary Model
 
-- Matches the questionnaire used in the app
-- Handles noisy behavioral data well
-- Provides stable predictions across risk levels
+- Random Forest (Users Behavioral Dataset)
+
+### Secondary Model
+
+- Random Forest (Score-based Addiction Model)
 
 ---
 
 # Integration with UrgeEase
 
-The ML model is the first step in the behavioral support pipeline.
+### Step 1 – User Input
 
-### Step 1 – User Questionnaire
+Users provide:
 
-Users answer questions about:
+- usage patterns
+- emotional indicators
+- behavioral responses
 
-- daily social media usage
-- distraction levels
-- sleep patterns
-- emotional state
+---
 
-### Step 2 – Addiction Risk Prediction
+### Step 2 – Prediction
 
-The trained model predicts:
+Model outputs:
 
-Low Risk  
-Moderate Risk  
-High Risk  
+---
 
-### Step 3 – AI Behavioral Support
+### Step 3 – AI Intervention
 
-Based on prediction:
+Based on score:
 
-Risk Level | Response
----------- | --------
-Low | Healthy usage insights
-Moderate | Habit improvement suggestions
-High | AI-generated recovery strategies via RAG
+| Score Range | Response                          |
+| ----------- | --------------------------------- |
+| Low         | Healthy usage feedback            |
+| Moderate    | Behavior improvement strategies   |
+| High        | AI-generated recovery plans (RAG) |
 
-The RAG system retrieves recovery guidance documents and generates personalized advice.
+---
+
+# Key Design Decision
+
+The system uses a **continuous addiction score (2–9)** rather than only categories.
+
+This enables:
+
+- tracking user progress over time
+- detecting gradual improvement
+- more personalized AI responses
 
 ---
 
@@ -304,11 +286,11 @@ The RAG system retrieves recovery guidance documents and generates personalized 
 
 Stored in:
 
-backend/ml_model/data/models/
+Examples:
 
-Example files:
+- social_media_addiction_rf.joblib
+- social_media_addiction_rf_score.joblib
+- social_media_users_rf.joblib
+- social_media_users_xgb.joblib
 
-social_media_addiction_rf.joblib  
-social_media_addiction_xgb.joblib  
-social_media_users_rf.joblib  
-social_media_users_xgb.joblib  
+---
