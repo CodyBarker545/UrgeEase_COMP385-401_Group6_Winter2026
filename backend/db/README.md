@@ -41,7 +41,13 @@ backend/.env
 
 Add your MongoDB connection string:
 MONGO_URI=your_mongodb_connection_string
+MONGO_DB_NAME=UrgeEase
+FLASK_ENV=development
+
+Example:
 MONGO_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+MONGO_DB_NAME=UrgeEase
+FLASK_ENV=development
 
 ---
 
