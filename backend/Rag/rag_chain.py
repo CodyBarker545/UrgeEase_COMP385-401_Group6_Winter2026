@@ -1,36 +1,32 @@
-# rag_chain_urgeease.py
 from __future__ import annotations
 
+import hashlib
 import os
 import re
-import hashlib
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
 
-from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-# ----------------------------
-# Embeddings (TEST-FRIENDLY)
-# ----------------------------
+# test-friendly embeddings
 class HashEmbeddings(Embeddings):
     """
-    Deterministic offline embeddings for tests/dev.
-    Produces a fixed-length vector per text using hashing.
-    Not for production quality retrieval, but perfect for unit tests.
+    deterministic offline embeddings for tests and local dev
     """
 
     def __init__(self, dim: int = 128):
         self.dim = dim
 
     def _embed(self, text: str) -> List[float]:
-        # Hashing trick on tokens
+        # hash tokens into a fixed vector
         tokens = re.findall(r"[a-z0-9']+", text.lower())
         vec = [0.0] * self.dim
+
         for tok in tokens:
             h = hashlib.md5(tok.encode("utf-8")).hexdigest()
             idx = int(h, 16) % self.dim
@@ -39,6 +35,7 @@ class HashEmbeddings(Embeddings):
         norm = sum(v * v for v in vec) ** 0.5
         if norm > 0:
             vec = [v / norm for v in vec]
+
         return vec
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -48,9 +45,7 @@ class HashEmbeddings(Embeddings):
         return self._embed(text)
 
 
-# ----------------------------
-# Safety / Crisis gating
-# ----------------------------
+# crisis checks
 CRISIS_KEYWORDS = [
     "suicide",
     "kill myself",
@@ -79,27 +74,33 @@ CRISIS_MESSAGE = (
 )
 
 
-# ----------------------------
-# RAG Config
-# ----------------------------
+# rag config
 @dataclass
 class RAGConfig:
     data_dir: str
     index_dir: str
     chunk_size: int = 800
     chunk_overlap: int = 150
-    k: int = 4  # number of retrieved chunks
+    k: int = 4
     use_mmr: bool = True
 
 
 def _compute_dir_hash(data_dir: str) -> str:
+    # hash all txt files recursively
     md5 = hashlib.md5()
-    for filename in sorted(os.listdir(data_dir)):
-        if filename.lower().endswith(".txt"):
-            path = os.path.join(data_dir, filename)
-            md5.update(filename.encode("utf-8"))
-            with open(path, "rb") as f:
-                md5.update(f.read())
+
+    txt_files: List[str] = []
+    for root, _, files in os.walk(data_dir):
+        for filename in files:
+            if filename.lower().endswith(".txt"):
+                txt_files.append(os.path.join(root, filename))
+
+    for path in sorted(txt_files):
+        relative_path = os.path.relpath(path, data_dir).replace("\\", "/")
+        md5.update(relative_path.encode("utf-8"))
+        with open(path, "rb") as f:
+            md5.update(f.read())
+
     return md5.hexdigest()
 
 
@@ -107,17 +108,16 @@ def build_or_load_vectorstore(
     cfg: RAGConfig,
     embeddings: Embeddings,
 ) -> FAISS:
+    # make sure index folder exists
     os.makedirs(cfg.index_dir, exist_ok=True)
 
     index_path = os.path.join(cfg.index_dir, "index.faiss")
-    pkl_path = os.path.join(
-        cfg.index_dir, "index.pkl"
-    )  # FAISS uses this name for docstore
+    pkl_path = os.path.join(cfg.index_dir, "index.pkl")
     hash_path = os.path.join(cfg.index_dir, "prev_hash.txt")
 
     current_hash = _compute_dir_hash(cfg.data_dir)
 
-    # If index exists + hash matches → load
+    # load existing index if corpus did not change
     if (
         os.path.exists(index_path)
         and os.path.exists(pkl_path)
@@ -125,44 +125,55 @@ def build_or_load_vectorstore(
     ):
         with open(hash_path, "r", encoding="utf-8") as f:
             old_hash = f.read().strip()
+
         if old_hash == current_hash:
             return FAISS.load_local(
-                cfg.index_dir, embeddings, allow_dangerous_deserialization=True
+                cfg.index_dir,
+                embeddings,
+                allow_dangerous_deserialization=True,
             )
 
-    # Otherwise rebuild
+    # otherwise rebuild it
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=cfg.chunk_size,
         chunk_overlap=cfg.chunk_overlap,
     )
 
     docs: List[Document] = []
-    for filename in os.listdir(cfg.data_dir):
-        if filename.lower().endswith(".txt"):
-            path = os.path.join(cfg.data_dir, filename)
-            loader = TextLoader(path, encoding="utf-8", autodetect_encoding=True)
-            loaded = loader.load()
-            # Add filename metadata for citations
-            for d in loaded:
-                d.metadata["source"] = filename
-            docs.extend(splitter.split_documents(loaded))
+
+    # load txt files recursively from data dir
+    for root, _, files in os.walk(cfg.data_dir):
+        for filename in files:
+            if filename.lower().endswith(".txt"):
+                path = os.path.join(root, filename)
+                relative_path = os.path.relpath(path, cfg.data_dir).replace("\\", "/")
+
+                loader = TextLoader(
+                    path,
+                    encoding="utf-8",
+                    autodetect_encoding=True,
+                )
+                loaded = loader.load()
+
+                # keep source path for citations
+                for d in loaded:
+                    d.metadata["source"] = relative_path
+
+                docs.extend(splitter.split_documents(loaded))
 
     vs = FAISS.from_documents(docs, embeddings)
     vs.save_local(cfg.index_dir)
 
+    # save corpus hash
     with open(hash_path, "w", encoding="utf-8") as f:
         f.write(current_hash)
 
     return vs
 
 
-# ----------------------------
-# Prompting
-# ----------------------------
+# history formatting
 def format_history(history: List[Dict[str, str]]) -> str:
-    """
-    history: [{"role": "user"/"assistant", "content": "..."}]
-    """
+    # turn chat history into a simple prompt block
     out = []
     for msg in history:
         role = msg.get("role", "user")
@@ -201,18 +212,15 @@ Respond with:
 """
 
 
-# ----------------------------
-# LLM adapter interface
-# ----------------------------
+# llm adapter
 LLMFn = Callable[[str], str]
 
 
 def fake_llm(prompt: str) -> str:
     """
-    Offline LLM stub for unit tests.
-    It echoes a short confirmation so you can verify the pipeline end-to-end.
+    offline llm stub for tests and demo checks
     """
-    # Keep it simple and deterministic
+    # pull source names out of the prompt
     sources = []
     for line in prompt.splitlines():
         if line.startswith("[SOURCE:"):
@@ -227,17 +235,15 @@ def fake_llm(prompt: str) -> str:
         "1) Supportive response\n"
         "It makes sense to feel stuck sometimes. If you're dealing with urges, we can try a small step right now.\n\n"
         "2) Practical next steps\n"
-        "- Name the urge (0-10), then pause and breathe slowly for 60 seconds.\n"
-        "- Delay 10 minutes and do a quick replacement action (walk, water, message a friend).\n"
-        "- Note the trigger: time, mood, place, or device.\n\n"
+        "- name the urge (0-10), then pause and breathe slowly for 60 seconds\n"
+        "- delay 10 minutes and do a quick replacement action\n"
+        "- note the trigger: time, mood, place, or device\n\n"
         "3) Sources used\n"
         f"{sources_str}"
     )
 
 
-# ----------------------------
-# Main RAG Chain (callable)
-# ----------------------------
+# main rag chain
 class UrgeEaseRAGChain:
     def __init__(
         self,
@@ -250,21 +256,21 @@ class UrgeEaseRAGChain:
         self.llm_fn = llm_fn or fake_llm
         self.vectorstore = build_or_load_vectorstore(cfg, embeddings)
 
-        # Retriever
-        search_kwargs = {"k": cfg.k}
-        # MMR improves diversity (optional)
+        # build retriever
         if cfg.use_mmr:
             self.retriever = self.vectorstore.as_retriever(
                 search_type="mmr",
                 search_kwargs={"k": cfg.k, "fetch_k": max(10, cfg.k * 3)},
             )
         else:
-            self.retriever = self.vectorstore.as_retriever(search_kwargs=search_kwargs)
+            self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": cfg.k})
 
     def invoke(
-        self, question: str, chat_history: Optional[List[Dict[str, str]]] = None
+        self,
+        question: str,
+        chat_history: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
-        # Crisis gate
+        # stop and return crisis help if needed
         if is_crisis(question):
             return {
                 "result": CRISIS_MESSAGE,
@@ -278,14 +284,14 @@ class UrgeEaseRAGChain:
         docs = self.retriever.invoke(question)
         context = "\n\n".join(
             [
-                f"[SOURCE: {d.metadata.get('source','unknown')}]\n{d.page_content}"
+                f"[SOURCE: {d.metadata.get('source', 'unknown')}]\n{d.page_content}"
                 for d in docs
             ]
         )
 
         prompt = build_prompt(history_str, context, question)
-
         answer = self.llm_fn(prompt)
+
         return {
             "result": answer,
             "source_documents": docs,
