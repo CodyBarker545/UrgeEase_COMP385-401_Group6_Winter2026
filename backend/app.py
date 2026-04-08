@@ -10,6 +10,7 @@ from routes.session_routes import session_bp
 from routes.message_routes import message_bp
 from routes.result_routes import result_bp
 from routes.prediction_routes import prediction_bp
+from routes.chat_routes import chat_bp
 
 load_dotenv()
 
@@ -23,6 +24,7 @@ def create_app() -> Flask:
     app.register_blueprint(message_bp, url_prefix="/api")
     app.register_blueprint(result_bp, url_prefix="/api")
     app.register_blueprint(prediction_bp, url_prefix="/api")
+    app.register_blueprint(chat_bp, url_prefix="/api")
 
     @app.get("/")
     def root():
