@@ -86,6 +86,8 @@ def test_predict_addiction_score_missing_fields(client):
 
     assert response.status_code == 400
     assert data["error"] == "Missing required fields"
+    assert "userId" in data["missing_fields"]
+    assert "sessionId" in data["missing_fields"]
 
 
 def test_predict_dependence_risk(client):
@@ -133,3 +135,5 @@ def test_predict_dependence_risk_missing_fields(client):
 
     assert response.status_code == 400
     assert data["error"] == "Missing required fields"
+    assert "userId" in data["missing_fields"]
+    assert "sessionId" in data["missing_fields"]

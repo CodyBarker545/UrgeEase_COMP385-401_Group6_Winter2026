@@ -4,18 +4,49 @@ from datetime import datetime, UTC
 from typing import Any
 
 from bson import ObjectId
+from bson.errors import InvalidId
 
 from db.mongo import get_db
 
 
 class ResultService:
     @staticmethod
+    def _normalize_id(raw_id: str, field_name: str) -> str:
+        normalized = str(raw_id).strip()
+        if not normalized:
+            raise ValueError(f"{field_name} is required")
+        return normalized
+
+    @classmethod
+    def _to_object_id(cls, raw_id: str, field_name: str) -> ObjectId:
+        normalized = cls._normalize_id(raw_id, field_name)
+        try:
+            return ObjectId(normalized)
+        except (InvalidId, TypeError) as exc:
+            raise ValueError(f"Invalid {field_name}") from exc
+
+    @classmethod
+    def _build_user_query(cls, user_id: str) -> dict[str, Any]:
+        normalized = cls._normalize_id(user_id, "userId")
+
+        clauses: list[dict[str, Any]] = [{"userId": normalized}]
+
+        try:
+            clauses.insert(0, {"userId": cls._to_object_id(normalized, "userId")})
+        except ValueError:
+            pass
+
+        return {"$or": clauses}
+
+    @staticmethod
     def save_addiction_result(payload: dict[str, Any], result: dict[str, Any]) -> str:
         db = get_db()
+        user_id = ResultService._to_object_id(payload.get("userId"), "userId")
+        session_id = ResultService._to_object_id(payload.get("sessionId"), "sessionId")
 
         doc = {
-            "userId": ObjectId(payload["userId"]) if payload.get("userId") else None,
-            "sessionId": ObjectId(payload["sessionId"]) if payload.get("sessionId") else None,
+            "userId": user_id,
+            "sessionId": session_id,
             "generatedAt": datetime.now(UTC),
             "modelName": result["model"],
             "addictionScore": result["addiction_score"],
@@ -31,10 +62,12 @@ class ResultService:
     @staticmethod
     def save_dependence_result(payload: dict[str, Any], result: dict[str, Any]) -> str:
         db = get_db()
+        user_id = ResultService._to_object_id(payload.get("userId"), "userId")
+        session_id = ResultService._to_object_id(payload.get("sessionId"), "sessionId")
 
         doc = {
-            "userId": ObjectId(payload["userId"]) if payload.get("userId") else None,
-            "sessionId": ObjectId(payload["sessionId"]) if payload.get("sessionId") else None,
+            "userId": user_id,
+            "sessionId": session_id,
             "generatedAt": datetime.now(UTC),
             "modelName": result["model"],
             "predictedClass": result["predicted_class"],
@@ -50,7 +83,7 @@ class ResultService:
         db = get_db()
 
         cursor = db.results.find(
-            {"userId": ObjectId(user_id)}
+            ResultService._build_user_query(user_id)
         ).sort("generatedAt", -1)
 
         results = []
@@ -76,7 +109,7 @@ class ResultService:
         db = get_db()
 
         res = db.results.find_one(
-            {"userId": ObjectId(user_id)},
+            ResultService._build_user_query(user_id),
             sort=[("generatedAt", -1)]
         )
 
@@ -101,7 +134,7 @@ class ResultService:
     def get_result_by_id(result_id: str) -> dict[str, Any] | None:
         db = get_db()
 
-        res = db.results.find_one({"_id": ObjectId(result_id)})
+        res = db.results.find_one({"_id": ResultService._to_object_id(result_id, "resultId")})
         if not res:
             return None
 

@@ -47,6 +47,7 @@ def chat_with_assistant(session_id: str):
                 **generated,
             }
         ), 200
-
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": f"Chat generation failed: {exc}"}), 500

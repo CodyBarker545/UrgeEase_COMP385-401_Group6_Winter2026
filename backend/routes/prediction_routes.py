@@ -11,6 +11,8 @@ model_service = ModelService()
 result_service = ResultService()
 
 ADDICTION_REQUIRED_FIELDS = [
+    "userId",
+    "sessionId",
     "Age",
     "Gender",
     "Avg_Daily_Usage_Hours",
@@ -22,6 +24,8 @@ ADDICTION_REQUIRED_FIELDS = [
 ]
 
 USERS_REQUIRED_FIELDS = [
+    "userId",
+    "sessionId",
     "Age",
     "Gender",
     "Relationship_Status",

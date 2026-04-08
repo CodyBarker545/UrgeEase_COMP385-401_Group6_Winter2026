@@ -6,6 +6,7 @@ from typing import Any
 from Rag.rag_chain import RAGConfig, HashEmbeddings, UrgeEaseRAGChain
 from services.message_service import MessageService
 from services.result_service import ResultService
+from services.session_service import SessionService
 
 
 class ChatService:
@@ -23,6 +24,7 @@ class ChatService:
         self.rag = UrgeEaseRAGChain(cfg, embeddings=HashEmbeddings())
         self.message_service = MessageService()
         self.result_service = ResultService()
+        self.session_service = SessionService()
 
     @staticmethod
     def _format_results_context(
@@ -89,13 +91,36 @@ class ChatService:
             )
         return history
 
+    def _get_results_for_chat_context(
+        self,
+        session_id: str,
+        user_id: str,
+    ) -> tuple[list[dict[str, Any]], str]:
+        normalized_user_id = str(user_id).strip()
+        previous_results = self.result_service.get_user_results(normalized_user_id)
+        if previous_results:
+            return previous_results, normalized_user_id
+
+        session = self.session_service.get_session_detail(session_id)
+        session_user_id = session.get("userId") if session else None
+
+        if session_user_id and session_user_id != normalized_user_id:
+            fallback_results = self.result_service.get_user_results(session_user_id)
+            if fallback_results:
+                return fallback_results, session_user_id
+
+        return previous_results, normalized_user_id
+
     def generate_initial_or_followup_response(
         self,
         session_id: str,
         user_id: str,
         user_message: str | None,
     ) -> dict[str, Any]:
-        previous_results = self.result_service.get_user_results(user_id)
+        previous_results, results_user_id = self._get_results_for_chat_context(
+            session_id=session_id,
+            user_id=user_id,
+        )
         latest_result = previous_results[0] if previous_results else None
 
         results_context = self._format_results_context(latest_result, previous_results)
@@ -128,6 +153,7 @@ class ChatService:
             ),
             "latestResult": latest_result,
             "previousResultsCount": len(previous_results),
+            "resultsUserId": results_user_id,
         }
 
     def save_chat_turn(
