@@ -93,21 +93,75 @@ db.createCollection("results", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["userId", "generatedAt", "insights"],
+      required: ["userId", "sessionId", "generatedAt", "modelName"],
       properties: {
         userId: { bsonType: "objectId" },
-        generatedFromSessionIds: { bsonType: "array", items: { bsonType: "objectId" } },
+        sessionId: { bsonType: "objectId" },
+        assessmentId: { bsonType: ["objectId", "null"] },
         generatedAt: { bsonType: "date" },
-        modelVersion: { bsonType: "string" },
-        insights: {
+        modelName: { bsonType: "string" },
+        addictionScore: { bsonType: ["int", "null"] },
+        predictedClass: { bsonType: ["int", "null"] },
+        riskLevel: { bsonType: ["string", "null"] },
+        probabilities: { bsonType: ["object", "null"] },
+        topTriggers: { bsonType: ["array", "null"], items: { bsonType: "string" } },
+        recommendations: { bsonType: ["array", "null"], items: { bsonType: "string" } }
+      }
+    }
+  }
+});
+db.results.createIndex({ userId: 1, generatedAt: -1 });
+db.results.createIndex({ sessionId: 1, generatedAt: -1 });
+db.results.createIndex({ assessmentId: 1, generatedAt: -1 });
+
+// -------------------- ASSESSMENTS --------------------
+db.createCollection("assessments", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["userId", "sessionId", "submittedAt", "answers"],
+      properties: {
+        userId: { bsonType: "objectId" },
+        sessionId: { bsonType: "objectId" },
+        submittedAt: { bsonType: "date" },
+        answers: { bsonType: "object" },
+        addictionResult: { bsonType: ["object", "null"] },
+        dependenceResult: { bsonType: ["object", "null"] }
+      }
+    }
+  }
+});
+db.assessments.createIndex({ userId: 1, submittedAt: -1 });
+db.assessments.createIndex({ sessionId: 1, submittedAt: -1 });
+
+// -------------------- RECOVERY PLANS --------------------
+db.createCollection("plans", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["userId", "assessmentId", "sessionId", "createdAt", "status", "focusArea", "actions"],
+      properties: {
+        userId: { bsonType: "objectId" },
+        assessmentId: { bsonType: "objectId" },
+        sessionId: { bsonType: "objectId" },
+        createdAt: { bsonType: "date" },
+        reviewDate: { bsonType: "date" },
+        status: { enum: ["active", "archived"] },
+        focusArea: { bsonType: "string" },
+        riskLevel: { bsonType: ["string", "null"] },
+        summary: { bsonType: ["string", "null"] },
+        goals: { bsonType: "array", items: { bsonType: "string" } },
+        actions: {
           bsonType: "array",
           items: {
             bsonType: "object",
-            required: ["label", "confidence", "topTriggers"],
+            required: ["id", "title", "description", "frequency", "completed"],
             properties: {
-              label: { bsonType: "string" },           // e.g., "Social Media"
-              confidence: { bsonType: "double", minimum: 0, maximum: 1 },
-              topTriggers: { bsonType: "array", items: { bsonType: "string" } }
+              id: { bsonType: "string" },
+              title: { bsonType: "string" },
+              description: { bsonType: "string" },
+              frequency: { bsonType: "string" },
+              completed: { bsonType: "bool" }
             }
           }
         }
@@ -115,7 +169,8 @@ db.createCollection("results", {
     }
   }
 });
-db.results.createIndex({ userId: 1, generatedAt: -1 });
+db.plans.createIndex({ userId: 1, status: 1, createdAt: -1 });
+db.plans.createIndex({ assessmentId: 1, createdAt: -1 });
 
 // -------------------- TRIGGER LOGS (optional) --------------------
 db.createCollection("trigger_logs", {

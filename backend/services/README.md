@@ -1,8 +1,15 @@
-# Services Folder
+﻿# Services Folder
 
-This folder contains the backend business logic for the UrgeEase application.
+This folder contains the backend business logic for UrgeEase.
 
-The service files are called by the Flask route files and handle the actual work of the application, such as prediction, database storage, session management, and authentication.
+The route files call these services to perform application work such as:
+
+- authentication
+- session and message persistence
+- model inference
+- assessment submission
+- recovery plan creation
+- chat generation
 
 ## Files
 
@@ -12,16 +19,12 @@ Loads the trained Random Forest models and performs inference.
 
 Responsibilities:
 
-- load `.joblib` models
-- convert request payloads into DataFrames
-- generate addiction score predictions
-- generate dependence risk predictions
-- map predictions to user-friendly labels
-- return probability distributions where available
-
-This file contains ML inference logic only.
-
----
+- load `.joblib` model files
+- convert request payloads into model-ready inputs
+- predict addiction score
+- predict dependence risk
+- map predictions to user-facing labels
+- return probability data where available
 
 ### `auth_service.py`
 
@@ -30,78 +33,115 @@ Handles user account operations.
 Responsibilities:
 
 - register a new user
-- hash passwords
+- hash and verify passwords
 - validate login credentials
-- update user profile data
-- soft delete user accounts
+- update profile data
+- soft delete accounts
 - fetch user details
-
-This file contains user account and authentication logic.
-
----
 
 ### `session_service.py`
 
-Handles session storage and updates.
+Handles session records.
 
 Responsibilities:
 
 - create sessions
-- fetch a user’s sessions
-- fetch one session’s details
-- mark sessions as completed
+- fetch sessions for a user
+- fetch one session
+- mark a session completed
 - archive sessions
-
-This file manages chat or voice session metadata.
-
----
 
 ### `message_service.py`
 
-Handles storing and retrieving conversation messages.
+Handles message persistence.
 
 Responsibilities:
 
 - add messages to a session
 - fetch all messages in a session
 - delete messages
-- update session message counts
+- keep session message counts in sync
 
-This file manages the actual conversation records.
-
----
+This service stores both user and assistant chat turns in the `messages` collection.
 
 ### `result_service.py`
 
-Handles storing and retrieving prediction results.
+Handles storing and retrieving model outputs.
 
 Responsibilities:
 
 - save addiction score results
 - save dependence risk results
 - fetch all results for a user
-- fetch latest result
+- fetch the latest result
 - fetch a result by ID
 
 Current behavior:
 
-- validates `userId`, `sessionId`, and `resultId` before querying or saving
-- saves prediction results with linked user and session references
-- supports user history lookup for dashboard views and chat context
+- validates `userId`, `sessionId`, and `resultId`
+- stores outputs with linked `userId`, `sessionId`, and `assessmentId`
+- supports result history for dashboards, trends, and chat context
 
-This file manages persistence of model outputs for dashboards, history, and tracking.
+### `assessment_service.py`
 
----
+Handles the full assessment submission workflow.
+
+Responsibilities:
+
+- validate and normalize assessment data passed from the route layer
+- run both Random Forest models
+- store the raw questionnaire in `assessments`
+- save both model outputs through `ResultService`
+- link result records back to the assessment using `assessmentId`
+- create a new recovery plan through `PlanService`
+
+This service is the main backend entry point for assessment submissions from the frontend.
+
+### `plan_service.py`
+
+Handles recovery plan generation and updates.
+
+Responsibilities:
+
+- choose the primary focus area from the most recent assessment
+- create a new active plan with summary, goals, and actions
+- archive older active plans for the same user
+- fetch the current active plan
+- update action completion state
+
+Current plan focus areas include:
+
+- `distractibility`
+- `sleep`
+- `validation`
+- `mindless_use`
+
+### `llm_service.py`
+
+Handles shared access to the Gemini-backed RAG chain.
+
+Responsibilities:
+
+- load Gemini configuration from environment variables
+- build or reuse the FAISS-backed RAG chain
+- send prompts to Gemini
+- return retrieved-answer output to the chat service
+
+This service caches one chain instance so the backend does not rebuild the RAG pipeline on every request.
 
 ### `chat_service.py`
 
-Handles the session-based recovery assistant flow.
+Handles the recovery assistant chat workflow.
 
 Responsibilities:
 
 - load recent session message history
-- load latest and previous assessment results for the user
-- build assessment context for RAG generation
-- save both user and assistant chat messages
-- fall back to the session owner when resolving chat result context
-This file manages recovery-assistant response generation and persistence for chat sessions.
+- load the latest and previous saved results for the user
+- build a short progress summary for prompt context
+- load the user's active recovery plan
+- guide responses toward the highest-risk assessment area and pending plan actions
+- call the Gemini-backed RAG pipeline
+- fall back to a shorter demo response if Gemini fails
+- save both the user message and the assistant reply
+
+This service powers the application's main session-based support conversation.

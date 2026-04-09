@@ -39,7 +39,11 @@ class ResultService:
         return {"$or": clauses}
 
     @staticmethod
-    def save_addiction_result(payload: dict[str, Any], result: dict[str, Any]) -> str:
+    def save_addiction_result(
+        payload: dict[str, Any],
+        result: dict[str, Any],
+        assessment_id: str | None = None,
+    ) -> str:
         db = get_db()
         user_id = ResultService._to_object_id(payload.get("userId"), "userId")
         session_id = ResultService._to_object_id(payload.get("sessionId"), "sessionId")
@@ -56,11 +60,18 @@ class ResultService:
             "recommendations": payload.get("recommendations", []),
         }
 
+        if assessment_id:
+            doc["assessmentId"] = ResultService._to_object_id(assessment_id, "assessmentId")
+
         inserted = db.results.insert_one(doc)
         return str(inserted.inserted_id)
 
     @staticmethod
-    def save_dependence_result(payload: dict[str, Any], result: dict[str, Any]) -> str:
+    def save_dependence_result(
+        payload: dict[str, Any],
+        result: dict[str, Any],
+        assessment_id: str | None = None,
+    ) -> str:
         db = get_db()
         user_id = ResultService._to_object_id(payload.get("userId"), "userId")
         session_id = ResultService._to_object_id(payload.get("sessionId"), "sessionId")
@@ -74,6 +85,9 @@ class ResultService:
             "riskLevel": result["risk_level"],
             "probabilities": result.get("probabilities", {}),
         }
+
+        if assessment_id:
+            doc["assessmentId"] = ResultService._to_object_id(assessment_id, "assessmentId")
 
         inserted = db.results.insert_one(doc)
         return str(inserted.inserted_id)
@@ -92,6 +106,7 @@ class ResultService:
                 "resultId": str(res["_id"]),
                 "userId": str(res["userId"]) if res.get("userId") else None,
                 "sessionId": str(res["sessionId"]) if res.get("sessionId") else None,
+                "assessmentId": str(res["assessmentId"]) if res.get("assessmentId") else None,
                 "generatedAt": res["generatedAt"].isoformat() if res.get("generatedAt") else None,
                 "modelName": res.get("modelName"),
                 "addictionScore": res.get("addictionScore"),
@@ -120,6 +135,7 @@ class ResultService:
             "resultId": str(res["_id"]),
             "userId": str(res["userId"]) if res.get("userId") else None,
             "sessionId": str(res["sessionId"]) if res.get("sessionId") else None,
+            "assessmentId": str(res["assessmentId"]) if res.get("assessmentId") else None,
             "generatedAt": res["generatedAt"].isoformat() if res.get("generatedAt") else None,
             "modelName": res.get("modelName"),
             "addictionScore": res.get("addictionScore"),
@@ -142,6 +158,7 @@ class ResultService:
             "resultId": str(res["_id"]),
             "userId": str(res["userId"]) if res.get("userId") else None,
             "sessionId": str(res["sessionId"]) if res.get("sessionId") else None,
+            "assessmentId": str(res["assessmentId"]) if res.get("assessmentId") else None,
             "generatedAt": res["generatedAt"].isoformat() if res.get("generatedAt") else None,
             "modelName": res.get("modelName"),
             "addictionScore": res.get("addictionScore"),

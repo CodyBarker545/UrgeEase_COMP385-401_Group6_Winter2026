@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@/frontend/*": [
+        "./*"
+      ],
       "@/*": [
         "./*"
       ]
@@ -32,10 +35,9 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "frontend/.next/types/**/*.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "frontend/node_modules"
+    "node_modules"
   ]
 }

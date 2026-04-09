@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useAuthStore } from '@/frontend/lib/store'
-import { createSession } from '@/frontend/lib/api'
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000'
+import { submitAssessment } from '@/frontend/lib/api'
 
 export default function AssessmentPage() {
     const user = useAuthStore((state) => state.user)
@@ -35,10 +33,15 @@ export default function AssessmentPage() {
     })
 
     type Prediction = {
-        risk_level: number;
+        dependence_risk_level: string;
+        predicted_class: number;
+        addiction_risk_level: string;
         addiction_score: number;
+        assessment_id: string;
     }
     const [prediction, setPrediction] = useState<Prediction | null>(null);
+    const [submitting, setSubmitting] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -49,58 +52,27 @@ export default function AssessmentPage() {
         e.preventDefault()
 
         if (!user?.id) {
-            console.error('A signed-in user is required to submit the assessment.')
+            setError('A signed-in user is required to submit the assessment.')
             return
         }
 
         try {
-            const { sessionId } = await createSession({ mode: 'chat' })
-            const payload = {
-                ...form,
-                userId: user.id,
-                sessionId,
-            }
-
-            const dependenceRes = await fetch(`${BACKEND_URL}/api/predict/dependence-risk`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!dependenceRes.ok) {
-                const error = await dependenceRes.json();
-                console.error(error)
-                return;
-            }
-
-            const dependenceData = await dependenceRes.json();
-
-            const addictionRes = await fetch(`${BACKEND_URL}/api/predict/addiction-score`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!addictionRes.ok) {
-                const error = await addictionRes.json();
-                console.error(error)
-                return;
-            }
-
-            const addictionData = await addictionRes.json();
-
-
+            setSubmitting(true)
+            setError(null)
+            const assessment = await submitAssessment(form)
             setPrediction({
-                risk_level: dependenceData.risk_level,
-                addiction_score: addictionData.addiction_score
+                dependence_risk_level: assessment.dependenceResult.risk_level,
+                predicted_class: assessment.dependenceResult.predicted_class,
+                addiction_risk_level: assessment.addictionResult.risk_level,
+                addiction_score: assessment.addictionResult.addiction_score,
+                assessment_id: assessment.assessmentId,
             })
 
         } catch (error) {
             console.error(error);
+            setError(error instanceof Error ? error.message : 'Failed to submit assessment.')
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -130,6 +102,7 @@ export default function AssessmentPage() {
             Conflicts_Over_Social_Media: ""
         })
         setPrediction(null)
+        setError(null)
     }
 
     return (
@@ -148,6 +121,18 @@ export default function AssessmentPage() {
                     backgroundColor: 'var(--color-card-bg)'
                 }}>
                 <form className='mx-auto max-w-4xl space-y-6' onSubmit={handleSubmit}>
+                    {error && (
+                        <div
+                            className="rounded-lg border px-4 py-3 text-sm"
+                            style={{
+                                borderColor: 'rgba(220, 38, 38, 0.4)',
+                                backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                                color: '#fca5a5'
+                            }}
+                        >
+                            {error}
+                        </div>
+                    )}
 
                     <div>
                         <label>Age: </label>
@@ -321,7 +306,9 @@ export default function AssessmentPage() {
                             style={{
                                 backgroundColor: 'var(--color-accent)',
                                 color: 'var(--color-text-light)',
-                            }} type='submit'>Submit</button>
+                            }} type='submit' disabled={submitting}>
+                            {submitting ? 'Submitting...' : 'Submit'}
+                        </button>
 
                         <button className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all"
                             style={{
@@ -335,11 +322,14 @@ export default function AssessmentPage() {
                     <div>
                         <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text-dark)', fontFamily: 'var(--font-primary)', marginBottom: '20px', textAlign: 'center' }}>Prediction Result</h1>
                         <div style={{
-                            display: 'inline-flex',
+                            display: 'grid',
                             gap: '10px',
                         }}>
+                            <p><b>Assessment ID:</b> {prediction.assessment_id}</p>
                             <p><b>Addiction Score:</b> {prediction.addiction_score}</p>
-                            <p><b>Dependence Risk:</b> {prediction.risk_level}</p>
+                            <p><b>Addiction Risk:</b> {prediction.addiction_risk_level}</p>
+                            <p><b>Dependence Class:</b> {prediction.predicted_class}</p>
+                            <p><b>Dependence Risk:</b> {prediction.dependence_risk_level}</p>
                         </div>
                     </div>
                 )

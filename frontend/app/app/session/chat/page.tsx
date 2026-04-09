@@ -15,14 +15,21 @@ export default function ChatSessionPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showCrisisModal, setShowCrisisModal] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!sessionId) return
     async function loadMessages() {
-      const data = await getSessionMessages(sessionId)
-      setMessages(data)
-      setLoading(false)
+      try {
+        const data = await getSessionMessages(sessionId)
+        setMessages(data)
+      } catch (error) {
+        console.error('Failed to load messages', error)
+        setSendError('Unable to load messages from the server.')
+      } finally {
+        setLoading(false)
+      }
     }
     loadMessages()
   }, [sessionId])
@@ -35,11 +42,14 @@ export default function ChatSessionPage() {
     e.preventDefault()
     if (!input.trim() || !sessionId || sending) return
 
+    const messageText = input.trim()
+    setSendError(null)
+
     const userMessage: Message = {
       id: `temp_${Date.now()}`,
       sessionId,
       role: 'user',
-      content: input.trim(),
+      content: messageText,
       createdAt: new Date().toISOString(),
       mode: 'chat',
     }
@@ -49,14 +59,18 @@ export default function ChatSessionPage() {
     setSending(true)
 
     try {
-      const response = await sendMessage({ sessionId, mode: 'chat', text: input.trim() })
-      setMessages((prev) => [...prev, response.assistantMessage])
+      const response = await sendMessage({ sessionId, mode: 'chat', text: messageText })
+      const syncedMessages = await getSessionMessages(sessionId)
+      setMessages(syncedMessages)
       
       if (response.crisisFlag) {
         setShowCrisisModal(true)
       }
     } catch (error) {
       console.error('Failed to send message', error)
+      setMessages((prev) => prev.filter((msg) => msg.id !== userMessage.id))
+      setInput(messageText)
+      setSendError(error instanceof Error ? error.message : 'Failed to send message.')
     } finally {
       setSending(false)
     }
@@ -135,6 +149,18 @@ export default function ChatSessionPage() {
 
         
         <form onSubmit={handleSend} className="border-t p-4" style={{ borderColor: 'rgba(227, 155, 99, 0.2)' }}>
+          {sendError && (
+            <div
+              className="mb-3 rounded-lg border px-3 py-2 text-sm"
+              style={{
+                borderColor: 'rgba(220, 38, 38, 0.4)',
+                backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                color: '#fca5a5',
+              }}
+            >
+              {sendError}
+            </div>
+          )}
           <div className="flex gap-2">
             <textarea
               value={input}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BarChart3, Lock } from 'lucide-react'
+import { BarChart3, Lock, ListChecks } from 'lucide-react'
 import { getResults } from '@/frontend/lib/api'
 import type { ResultsSummary } from '@/frontend/lib/types'
 
@@ -77,6 +77,27 @@ export default function ResultsPage() {
           Insights from {results.sessionsCompleted} conversations
         </p>
       </div>
+
+      {results.activePlan && (
+        <Link
+          href="/app/plan"
+          className="block rounded-lg border-2 p-6 transition-all"
+          style={{
+            borderColor: 'rgba(227, 155, 99, 0.2)',
+            backgroundColor: 'var(--color-card-bg)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <ListChecks className="h-5 w-5" style={{ color: 'var(--color-accent)' }} />
+            <div>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>Active Recovery Plan</h2>
+              <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                {results.activePlan.summary}
+              </p>
+            </div>
+          </div>
+        </Link>
+      )}
 
       <div className="space-y-4">
         {results.addictions.map((addiction) => (

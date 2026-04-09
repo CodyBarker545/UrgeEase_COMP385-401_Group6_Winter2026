@@ -1,109 +1,125 @@
-# Routes Folder
+﻿# Routes Folder
 
-This folder contains the Flask route files for the UrgeEase backend API.
+This folder contains the Flask blueprints for the UrgeEase backend API.
 
-Each file defines a set of related endpoints and keeps the HTTP layer separate from the business logic in the `services` folder.
+Routes handle:
+
+- request validation
+- route parameters and JSON bodies
+- HTTP response formatting
+- delegation to service-layer business logic
 
 ## Files
 
 ### `auth_routes.py`
 
-Handles user authentication and account-related actions.
+Handles user account and authentication endpoints.
 
-Endpoints include:
+Main responsibilities:
 
-- user registration
-- user login
-- fetching user details
-- updating user profile fields
-- soft deleting a user
-
-This file is responsible for requests related to user identity and account management.
-
----
+- register a user
+- log in a user
+- fetch user details
+- update profile fields
+- soft delete a user
 
 ### `session_routes.py`
 
-Handles conversation session management.
+Handles session lifecycle endpoints.
 
-Endpoints include:
+Main responsibilities:
 
-- creating a new session
-- fetching all sessions for a user
-- fetching one session’s details
-- marking a session as completed
-- archiving a session
-
-This file is responsible for session lifecycle management.
-
----
+- create a session
+- fetch sessions for a user
+- fetch one session
+- mark a session as completed
+- archive a session
 
 ### `message_routes.py`
 
-Handles messages stored inside a session.
+Handles stored session messages.
 
-Endpoints include:
+Main responsibilities:
 
-- adding a message to a session
-- fetching all messages from a session
-- deleting a message
-
-This file manages conversation content between the user and the assistant.
-
----
+- add a message to a session
+- fetch all messages in a session
+- delete a message
 
 ### `result_routes.py`
 
 Handles retrieval of saved model outputs.
 
-Endpoints include:
+Main responsibilities:
 
-- fetching all saved results for a user
-- fetching the latest result for a user
-- fetching one specific result by ID
+- fetch all saved results for a user
+- fetch the latest result for a user
+- fetch one result by ID
 
 Notes:
 
-- invalid `userId` and `resultId` values now return `400`
-- user history is returned newest first
-- results are expected to be linked to a saved `userId`
-
-This file supports dashboard/history-style features.
-
----
+- results are returned newest first
+- invalid `userId` and `resultId` values return `400`
+- results are expected to be linked to a valid `userId`
 
 ### `prediction_routes.py`
 
-Handles model inference endpoints.
+Handles the lower-level model inference endpoints.
 
-Endpoints include:
+Main responsibilities:
 
-- predicting addiction score using the social media addiction model
-- predicting dependence risk using the behavioral dependence model
+- predict addiction score
+- predict dependence risk
 
 Notes:
 
-- both prediction endpoints now require `userId` and `sessionId`
-- prediction results are saved only when both IDs are valid
-- this ensures saved results can later be retrieved through `/api/results/user/<user_id>`
+- these routes still exist
+- they require valid `userId` and `sessionId` when saving outputs
+- the main frontend assessment flow now uses `POST /api/assessments` instead of calling both prediction routes directly
 
-This file validates request data, calls the ML model service, and saves the prediction result through the result service.
+### `assessment_routes.py`
 
----
+Handles the full assessment submission flow.
+
+Main route:
+
+- `POST /api/assessments`
+
+This route:
+
+- validates the complete questionnaire payload
+- calls `AssessmentService`
+- runs both Random Forest models
+- stores raw answers in `assessments`
+- stores model outputs in `results`
+- creates a recovery plan in `plans`
+
+### `plan_routes.py`
+
+Handles recovery plan endpoints.
+
+Main routes:
+
+- `GET /api/plans/user/<user_id>/active`
+- `PATCH /api/plans/<plan_id>/actions/<action_id>`
+
+This route group supports:
+
+- fetching the user's current active plan
+- marking individual plan actions complete or incomplete
 
 ### `chat_routes.py`
 
-Handles the recovery assistant chat endpoint for an existing session.
+Handles session-based recovery assistant chat.
 
-Endpoints include:
+Main route:
 
-- generating an initial assistant response after assessment
-- generating follow-up chat responses inside a session
+- `POST /api/sessions/<session_id>/chat`
 
-Notes:
+Current behavior:
 
-- the route is `POST /api/sessions/<session_id>/chat`
-- the request body must contain the user `userId`
-- the session ID comes from the route parameter, not the request body
-
-This file coordinates chat generation and message persistence for session-based recovery conversations.
+- accepts the session ID from the URL
+- accepts the user `userId` in the body
+- builds chat context from recent messages, saved results, result history, and the active plan
+- generates an assistant response through the RAG pipeline
+- falls back to a demo reply if Gemini fails
+- saves both the user message and the assistant message in MongoDB

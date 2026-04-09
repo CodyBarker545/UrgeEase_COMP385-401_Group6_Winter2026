@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, MessageSquare, Mic, BarChart3, History, Settings, AlertCircle, Menu, X, UserCircle } from 'lucide-react'
+import { Home, MessageSquare, Mic, BarChart3, History, Settings, AlertCircle, Menu, X, UserCircle, ClipboardList, ListChecks } from 'lucide-react'
 import { useAuthStore } from '@/frontend/lib/store'
 import { cn } from '@/frontend/lib/utils'
 
@@ -18,6 +18,8 @@ export function AppShell({ children }: AppShellProps) {
 
   const navItems = [
     { href: '/app/home', label: 'Home', icon: Home },
+    { href: '/app/assessment', label: 'Assessment', icon: ClipboardList },
+    { href: '/app/plan', label: 'Plan', icon: ListChecks },
     { href: '/app/sessions', label: 'Sessions', icon: MessageSquare },
     { href: '/app/results', label: 'Results', icon: BarChart3 },
     { href: '/app/history', label: 'History', icon: History },

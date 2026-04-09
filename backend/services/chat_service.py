@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import random
+from datetime import datetime
 from typing import Any
 
 from services.llm_service import get_llm_service
 from services.message_service import MessageService
+from services.plan_service import PlanService
 from services.result_service import ResultService
 from services.session_service import SessionService
 
@@ -12,6 +15,7 @@ class ChatService:
     def __init__(self) -> None:
         # setup services
         self.message_service = MessageService()
+        self.plan_service = PlanService()
         self.result_service = ResultService()
         self.session_service = SessionService()
 
@@ -106,6 +110,270 @@ class ChatService:
 
         return previous_results, normalized_user_id
 
+    @staticmethod
+    def _format_display_date(raw_date: str | None) -> str:
+        if not raw_date:
+            return "an earlier assessment"
+
+        try:
+            normalized = raw_date.replace("Z", "+00:00")
+            return datetime.fromisoformat(normalized).strftime("%B %d, %Y")
+        except ValueError:
+            return raw_date
+
+    @staticmethod
+    def _classify_change(latest_value: int | None, previous_value: int | None) -> str:
+        if latest_value is None or previous_value is None:
+            return "unknown"
+        if latest_value < previous_value:
+            return "improved"
+        if latest_value > previous_value:
+            return "worsened"
+        return "unchanged"
+
+    @classmethod
+    def _build_progress_summary(
+        cls,
+        latest_result: dict[str, Any] | None,
+        previous_results: list[dict[str, Any]],
+    ) -> str:
+        if not latest_result:
+            return (
+                "Progress summary:\n"
+                "- No prior assessment results are available.\n"
+                "- Treat the current assessment as the user's baseline.\n"
+                "- Do not describe improvement or decline unless historical data exists."
+            )
+
+        latest_score = latest_result.get("addictionScore")
+        latest_class = latest_result.get("predictedClass")
+        latest_risk = latest_result.get("riskLevel")
+        latest_date = cls._format_display_date(latest_result.get("generatedAt"))
+
+        if len(previous_results) <= 1:
+            lines = [
+                "Progress summary:",
+                f"- Latest assessment date: {latest_date}",
+            ]
+            if latest_score is not None:
+                lines.append(f"- Latest addiction score: {latest_score}")
+            if latest_class is not None:
+                lines.append(f"- Latest dependence class: {latest_class}")
+            if latest_risk:
+                lines.append(f"- Latest risk level: {latest_risk}")
+            lines.append("- This is the baseline assessment; do not imply a trend yet.")
+            return "\n".join(lines)
+
+        previous_result = previous_results[1]
+        previous_score = previous_result.get("addictionScore")
+        previous_class = previous_result.get("predictedClass")
+        previous_risk = previous_result.get("riskLevel")
+        previous_date = cls._format_display_date(previous_result.get("generatedAt"))
+
+        score_change = cls._classify_change(latest_score, previous_score)
+        class_change = cls._classify_change(latest_class, previous_class)
+
+        overall_trend = score_change
+        if overall_trend == "unknown":
+            overall_trend = class_change
+
+        if overall_trend == "improved":
+            interpretation = (
+                "The latest assessment suggests measurable improvement compared with the previous assessment."
+            )
+        elif overall_trend == "worsened":
+            interpretation = (
+                "The latest assessment suggests higher current risk compared with the previous assessment."
+            )
+        elif overall_trend == "unchanged":
+            interpretation = (
+                "The latest assessment appears broadly stable compared with the previous assessment."
+            )
+        else:
+            interpretation = (
+                "Historical comparison is limited, so describe any trend cautiously."
+            )
+
+        lines = [
+            "Progress summary:",
+            f"- Latest assessment date: {latest_date}",
+            f"- Previous assessment date: {previous_date}",
+        ]
+        if latest_score is not None and previous_score is not None:
+            lines.append(
+                f"- Addiction score changed from {previous_score} to {latest_score} ({score_change})."
+            )
+        if latest_class is not None and previous_class is not None:
+            lines.append(
+                f"- Dependence class changed from {previous_class} to {latest_class} ({class_change})."
+            )
+        if latest_risk and previous_risk:
+            lines.append(
+                f"- Risk level changed from {previous_risk} to {latest_risk}."
+            )
+        lines.append(f"- Interpretation: {interpretation}")
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def _extract_focus_areas(latest_result: dict[str, Any] | None) -> str:
+        if not latest_result:
+            return (
+                "Focus areas:\n"
+                "- No assessment-derived focus areas are available yet.\n"
+                "- Give short, practical help based on the user's message."
+            )
+
+        triggers = latest_result.get("topTriggers", []) or []
+        recommendations = latest_result.get("recommendations", []) or []
+        lines = ["Focus areas:"]
+
+        if triggers:
+            lines.append(f"- Prioritize these likely problem areas: {', '.join(triggers[:3])}.")
+        if recommendations:
+            lines.append(
+                f"- Build your advice around these practical directions: {', '.join(recommendations[:2])}."
+            )
+
+        lines.append(
+            "- Keep the response tightly focused on one or two actionable steps for the highest-risk area."
+        )
+        return "\n".join(lines)
+
+    def _get_active_plan_for_chat_context(self, user_id: str) -> dict[str, Any] | None:
+        try:
+            return self.plan_service.get_active_plan(user_id)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _format_plan_context(active_plan: dict[str, Any] | None) -> str:
+        if not active_plan:
+            return (
+                "Active plan:\n"
+                "- No active recovery plan is available.\n"
+                "- Give practical support based on the assessment and the user's current message."
+            )
+
+        completed_actions = [
+            action["title"]
+            for action in active_plan.get("actions", [])
+            if action.get("completed")
+        ]
+        pending_actions = [
+            action["title"]
+            for action in active_plan.get("actions", [])
+            if not action.get("completed")
+        ]
+
+        lines = [
+            "Active plan:",
+            f"- Focus area: {active_plan.get('focusArea', 'general support')}",
+            f"- Summary: {active_plan.get('summary', 'No summary available.')}",
+        ]
+
+        if pending_actions:
+            lines.append(
+                f"- Pending actions: {', '.join(pending_actions[:3])}."
+            )
+        if completed_actions:
+            lines.append(
+                f"- Completed actions: {', '.join(completed_actions[:3])}."
+            )
+
+        lines.append(
+            "- When relevant, coach the user using this active plan before suggesting new strategies."
+        )
+        return "\n".join(lines)
+
+    @staticmethod
+    def _detect_crisis(text: str | None) -> bool:
+        if not text:
+            return False
+
+        lowered = text.lower()
+        crisis_terms = [
+            "suicide",
+            "kill myself",
+            "self harm",
+            "hurt myself",
+            "end my life",
+            "don't want to live",
+        ]
+        return any(term in lowered for term in crisis_terms)
+
+    @classmethod
+    def _build_demo_fallback_response(
+        cls,
+        user_message: str | None,
+        latest_result: dict[str, Any] | None,
+        previous_results_count: int,
+        progress_summary: str,
+        active_plan: dict[str, Any] | None,
+    ) -> str:
+        if not user_message or not user_message.strip():
+            opener = (
+                "I'm here with you. We can take this one step at a time and focus on practical support."
+            )
+        else:
+            opener = (
+                f"I hear you. You said: \"{user_message.strip()}\". "
+                "Thank you for sharing that."
+            )
+
+        risk_line = ""
+        if latest_result:
+            risk = latest_result.get("riskLevel")
+            score = latest_result.get("addictionScore")
+            parts: list[str] = []
+            if risk is not None:
+                parts.append(f"risk level: {risk}")
+            if score is not None:
+                parts.append(f"addiction score: {score}")
+            if parts:
+                risk_line = (
+                    " Based on your latest assessment, "
+                    + ", ".join(parts)
+                    + "."
+                )
+
+        prompts = [
+            "Try one small step today: delay the urge by 10 minutes and do something physical like water, walking, or moving rooms.",
+            "If distractibility is high, put your phone out of reach during one task block and check it only after the block ends.",
+            "If sleep is a problem, avoid social media for the last 30 minutes before bed and replace it with a quiet routine.",
+            "Pick one trigger to watch today, such as boredom, stress, or being alone, and notice what happens right before you open the app.",
+        ]
+        prompt = random.choice(prompts)
+
+        history_line = ""
+        if previous_results_count > 1:
+            history_line = " I can also help you compare what you're feeling now with your previous sessions."
+
+        progress_line = ""
+        if "measurable improvement" in progress_summary:
+            progress_line = (
+                " Your recent assessment history suggests improvement, and that progress is worth recognizing."
+            )
+        elif "higher current risk" in progress_summary:
+            progress_line = (
+                " Your recent assessment suggests things may be feeling heavier right now, and we can respond to that supportively."
+            )
+        elif "broadly stable" in progress_summary:
+            progress_line = (
+                " Your recent assessment looks fairly stable, which can help us focus on the next practical step."
+            )
+
+        plan_line = ""
+        if active_plan:
+            pending_action = next(
+                (action["title"] for action in active_plan.get("actions", []) if not action.get("completed")),
+                None,
+            )
+            if pending_action:
+                plan_line = f" Your current plan suggests focusing on: {pending_action}."
+
+        return f"{opener}{risk_line}{progress_line}{plan_line} {prompt}{history_line}".strip()
+
     def generate_initial_or_followup_response(
         self,
         session_id: str,
@@ -121,40 +389,90 @@ class ChatService:
         latest_result = previous_results[0] if previous_results else None
 
         results_context = self._format_results_context(latest_result, previous_results)
+        progress_summary = self._build_progress_summary(latest_result, previous_results)
+        focus_areas = self._extract_focus_areas(latest_result)
+        active_plan = self._get_active_plan_for_chat_context(results_user_id)
+        plan_context = self._format_plan_context(active_plan)
         history = self._build_chat_history(session_id)
 
         # build the user question for rag
         if user_message and user_message.strip():
             question = (
-                f"{user_message.strip()}\n\n" f"Assessment context:\n{results_context}"
+                f"{user_message.strip()}\n\n"
+                f"Assessment context:\n{results_context}\n\n"
+                f"{progress_summary}\n\n"
+                f"{focus_areas}\n\n"
+                f"{plan_context}\n\n"
+                "Response requirements:\n"
+                "- Keep the response short: 2 to 4 sentences total.\n"
+                "- Focus on helping the user with the most relevant assessment problem area.\n"
+                "- If an active recovery plan exists, prefer supporting the next pending action in that plan.\n"
+                "- Acknowledge completed plan actions briefly when useful, then build on that progress.\n"
+                "- If distractibility, sleep issues, validation seeking, or similar signals appear important, address them directly.\n"
+                "- Give 1 or 2 practical actions the user can do today.\n"
+                "- Do not give a long explanation, list of sources, or academic-style summary.\n"
+                "- Mention progress only briefly and only if it is directly useful.\n"
+                "- Use a supportive, professional, plain-spoken tone."
             )
         else:
             question = (
                 "Start the first supportive message after assessment.\n\n"
                 f"Assessment context:\n{results_context}\n\n"
-                "Tell the user their current result in a supportive way, mention prior result if available, "
-                "point out the strongest current addiction-related signs, and suggest practical next steps."
+                f"{progress_summary}\n\n"
+                f"{focus_areas}\n\n"
+                f"{plan_context}\n\n"
+                "Response requirements:\n"
+                "- Keep the response short: 2 to 4 sentences total.\n"
+                "- Briefly mention the main issue suggested by the assessment.\n"
+                "- If an active recovery plan exists, align the response with the current focus area and pending actions.\n"
+                "- Give 1 or 2 practical next steps the user can try today.\n"
+                "- Do not produce long summaries, source lists, or essay-style coaching.\n"
+                "- If this is the first assessment, frame it as a starting point.\n"
+                "- Use a supportive, professional, plain-spoken tone."
             )
 
-        # run rag + gemini
-        rag_out = get_llm_service().generate_reply(
-            question=question,
-            chat_history=history,
-        )
+        try:
+            # run rag + gemini
+            rag_out = get_llm_service().generate_reply(
+                question=question,
+                chat_history=history,
+            )
 
-        return {
-            "assistantResponse": rag_out["result"],
-            "crisis": rag_out["crisis"],
-            "sources": sorted(
-                {
-                    d.metadata.get("source", "unknown")
-                    for d in rag_out.get("source_documents", [])
-                }
-            ),
-            "latestResult": latest_result,
-            "previousResultsCount": len(previous_results),
-            "resultsUserId": results_user_id,
-        }
+            return {
+                "assistantResponse": rag_out["result"],
+                "crisis": rag_out["crisis"],
+                "sources": sorted(
+                    {
+                        d.metadata.get("source", "unknown")
+                        for d in rag_out.get("source_documents", [])
+                    }
+                ),
+                "latestResult": latest_result,
+                "previousResultsCount": len(previous_results),
+                "resultsUserId": results_user_id,
+                "activePlan": active_plan,
+                "fallbackUsed": False,
+            }
+        except Exception as exc:
+            fallback_response = self._build_demo_fallback_response(
+                user_message=user_message,
+                latest_result=latest_result,
+                previous_results_count=len(previous_results),
+                progress_summary=progress_summary,
+                active_plan=active_plan,
+            )
+
+            return {
+                "assistantResponse": fallback_response,
+                "crisis": self._detect_crisis(user_message),
+                "sources": ["demo-fallback"],
+                "latestResult": latest_result,
+                "previousResultsCount": len(previous_results),
+                "resultsUserId": results_user_id,
+                "activePlan": active_plan,
+                "fallbackUsed": True,
+                "fallbackReason": str(exc),
+            }
 
     def save_chat_turn(
         self,

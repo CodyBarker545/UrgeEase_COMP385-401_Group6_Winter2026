@@ -11,6 +11,8 @@ from routes.message_routes import message_bp
 from routes.result_routes import result_bp
 from routes.prediction_routes import prediction_bp
 from routes.chat_routes import chat_bp
+from routes.assessment_routes import assessment_bp
+from routes.plan_routes import plan_bp
 
 # load env vars
 load_dotenv()
@@ -28,6 +30,8 @@ def create_app() -> Flask:
     app.register_blueprint(result_bp, url_prefix="/api")
     app.register_blueprint(prediction_bp, url_prefix="/api")
     app.register_blueprint(chat_bp, url_prefix="/api")
+    app.register_blueprint(assessment_bp, url_prefix="/api")
+    app.register_blueprint(plan_bp, url_prefix="/api")
 
     @app.get("/")
     def root():

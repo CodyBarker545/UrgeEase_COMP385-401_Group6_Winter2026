@@ -32,6 +32,7 @@ export interface ResultsSummary {
   sessionsCompleted: number
   addictions: AddictionSummary[]
   unlocked: boolean
+  activePlan?: RecoveryPlan | null
 }
 
 export interface AddictionSummary {
@@ -53,6 +54,29 @@ export interface TriggerCategory {
   category: 'temporal' | 'emotional' | 'environmental' | 'cognitive'
   triggers: string[]
   count: number
+}
+
+export interface RecoveryAction {
+  id: string
+  title: string
+  description: string
+  frequency: string
+  completed: boolean
+}
+
+export interface RecoveryPlan {
+  planId: string
+  userId: string | null
+  assessmentId: string | null
+  sessionId: string | null
+  createdAt: string | null
+  reviewDate: string | null
+  status: string | null
+  focusArea: string | null
+  riskLevel: string | null
+  summary: string | null
+  goals: string[]
+  actions: RecoveryAction[]
 }
 
 export interface EvidenceExcerpt {

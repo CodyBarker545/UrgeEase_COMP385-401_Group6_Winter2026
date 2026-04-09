@@ -1,78 +1,157 @@
-# Database Setup (MongoDB)
+﻿# Database Setup (MongoDB)
 
-This project uses **MongoDB Atlas** as the primary database for storing users, sessions, messages, and prediction results.
-
----
+UrgeEase uses MongoDB to store users, sessions, messages, assessment submissions, model outputs, and recovery plans.
 
 ## Overview
 
-The database is automatically initialized using a Python script:
-init_db.py
+Database setup is handled by:
 
-This script creates:
+```text
+backend/db/init_db.py
+```
 
-- Collections:
-  - `users`
-  - `sessions`
-  - `messages`
-  - `results`
-  - `trigger_logs`
-  - `crisis_resources`
+The script creates the main collections and indexes used by the application.
 
-- Indexes for:
-  - faster queries
-  - efficient lookups
-  - improved performance
+## Collections Created
 
----
+- `users`
+- `sessions`
+- `messages`
+- `results`
+- `assessments`
+- `plans`
+- `trigger_logs`
+- `crisis_resources`
 
 ## Prerequisites
 
-Before running the database setup, ensure:
+Before running the setup script, make sure you have:
 
-- You have a **MongoDB Atlas cluster**
-- You have a valid **connection string (MONGO_URI)**
-- Your IP address is allowed in MongoDB Network Access
+- a MongoDB connection string
+- a target database name
+- network access allowed for your machine if using MongoDB Atlas
 
----
+## Environment Variables
 
-## Step 1 — Configure Environment Variables
+Create `backend/.env` with:
 
-Create a `.env` file in the **backend folder**:
-backend/.env
-
-Add your MongoDB connection string:
+```text
 MONGO_URI=your_mongodb_connection_string
 MONGO_DB_NAME=UrgeEase
 FLASK_ENV=development
+GEMINI_API_KEY=your_actual_key_here
+```
 
-Example:
-MONGO_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-MONGO_DB_NAME=UrgeEase
-FLASK_ENV=development
+## Running the Setup Script
 
----
+From `backend`:
 
-## Step 2 — Initialize the Database
+```powershell
+python db\init_db.py
+```
 
-From the **backend folder**, run:
+From `backend\db`:
 
-```bash
+```powershell
 python init_db.py
 ```
 
-## Notes
+## What `init_db.py` Does
 
-- `init_db.py` creates collections and indexes only
-- it does not insert users, sessions, messages, or prediction results
-- application data is created through the API routes
+The script:
 
-## Results Storage
+- connects to MongoDB
+- creates missing collections
+- creates the indexes the app expects
 
-Prediction results in `results` are linked by:
+It does not:
+
+- create demo users
+- insert assessment data
+- insert chat messages
+- insert result history
+
+That application data is created through the API.
+
+## Collection Responsibilities
+
+### `users`
+
+Stores account-level information such as email, password hash, profile data, and soft-delete status.
+
+### `sessions`
+
+Stores chat or voice session metadata.
+
+### `messages`
+
+Stores both user and assistant messages for a session.
+
+### `results`
+
+Stores derived model outputs only.
+
+Each result can include:
 
 - `userId`
 - `sessionId`
+- `assessmentId`
 - `generatedAt`
+- `modelName`
+- `addictionScore`
+- `predictedClass`
+- `riskLevel`
+- `probabilities`
+- `topTriggers`
+- `recommendations`
 
-Current backend behavior requires valid `userId` and `sessionId` values when saving prediction results so that history retrieval and chat context loading work correctly.
+### `assessments`
+
+Stores the raw questionnaire submission.
+
+Each assessment includes:
+
+- `userId`
+- `sessionId`
+- `submittedAt`
+- `answers`
+- `addictionResult`
+- `dependenceResult`
+
+The embedded result summaries include the linked `resultId` values after the result records are saved.
+
+### `plans`
+
+Stores recovery plans created from the latest assessment.
+
+Each plan includes:
+
+- `userId`
+- `assessmentId`
+- `sessionId`
+- `createdAt`
+- `reviewDate`
+- `status`
+- `focusArea`
+- `riskLevel`
+- `summary`
+- `goals`
+- `actions`
+
+When a new plan is created for a user, older active plans are archived.
+
+## Important Indexes
+
+The app relies on these main index patterns:
+
+- `results`: by `userId`, `sessionId`, and `assessmentId`
+- `assessments`: by `userId` and `sessionId`
+- `plans`: by `userId + status` and by `assessmentId`
+- `messages`: by `sessionId` and `userId`
+- `sessions`: by `userId`
+
+For the exact create statements, see:
+
+```text
+backend/db/CreateCollectionIndexes.txt
+```

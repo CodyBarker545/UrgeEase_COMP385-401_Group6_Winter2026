@@ -11,6 +11,7 @@ import type {
   CreateSessionRequest,
   SendMessageRequest,
   AuthResponse,
+  RecoveryPlan,
 } from './types'
 
 const AUTH_STORAGE_KEY = 'urgeease-auth'
@@ -59,6 +60,33 @@ type PendingVerification = {
   email: string
   preferredName: string
 }
+
+export type AssessmentPayload = {
+  Age: string
+  Gender: string
+  Relationship_Status: string
+  Occupation_Status: string
+  Mindless_Use: string
+  Distraction_When_Busy: string
+  Restless_Without_SM: string
+  Distractibility_Score: string
+  Worry_Score: string
+  Concentration_Difficulty: string
+  Social_Comparison: string
+  Validation_Seeking: string
+  Depression_Frequency: string
+  Interest_Fluctuation: string
+  Sleep_Issues: string
+  Daily_Usage_Hours: string
+  Platform_Count: string
+  Avg_Daily_Usage_Hours: string
+  Affects_Academic_Performance: string
+  Sleep_Hours_Per_Night: string
+  Mental_Health_Score: string
+  Conflicts_Over_Social_Media: string
+}
+
+type BackendPlan = RecoveryPlan
 
 function getJsonStorage<T>(key: string): T | null {
   if (typeof window === 'undefined') return null
@@ -239,6 +267,57 @@ export async function createSession(data: CreateSessionRequest): Promise<{ sessi
   return { sessionId: result.sessionId }
 }
 
+export async function submitAssessment(
+  answers: AssessmentPayload
+): Promise<{
+  assessmentId: string
+  addictionResult: {
+    addiction_score: number
+    risk_level: string
+    resultId: string
+  }
+  dependenceResult: {
+    predicted_class: number
+    risk_level: string
+    resultId: string
+  }
+  plan: RecoveryPlan
+}> {
+  const userId = getCurrentUserId()
+  if (!userId) {
+    throw new Error('You must be signed in to submit an assessment')
+  }
+
+  const { sessionId } = await createSession({ mode: 'chat' })
+
+  return apiRequest('/api/assessments', {
+    method: 'POST',
+    body: JSON.stringify({
+      userId,
+      sessionId,
+      ...answers,
+    }),
+  })
+}
+
+export async function getActivePlan(): Promise<RecoveryPlan | null> {
+  const userId = getCurrentUserId()
+  if (!userId) return null
+
+  try {
+    return await apiRequest<BackendPlan>(`/api/plans/user/${userId}/active`)
+  } catch {
+    return null
+  }
+}
+
+export async function updatePlanAction(planId: string, actionId: string, completed: boolean): Promise<RecoveryPlan> {
+  return apiRequest<BackendPlan>(`/api/plans/${planId}/actions/${actionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ completed }),
+  })
+}
+
 export async function getSessions(): Promise<SessionSummary[]> {
   const userId = getCurrentUserId()
   if (!userId) return []
@@ -300,9 +379,10 @@ export async function getResults(): Promise<ResultsSummary> {
     return { sessionsCompleted: 0, addictions: [], unlocked: false }
   }
 
-  const [sessions, latestResult] = await Promise.all([
+  const [sessions, latestResult, activePlan] = await Promise.all([
     getSessions(),
     apiRequest<BackendResult>(`/api/results/latest/${userId}`).catch(() => null),
+    getActivePlan(),
   ])
 
   const sessionsCompleted = sessions.filter((session) => session.messageCount > 0).length
@@ -311,12 +391,14 @@ export async function getResults(): Promise<ResultsSummary> {
       sessionsCompleted,
       addictions: [],
       unlocked: false,
+      activePlan,
     }
   }
 
   return {
     sessionsCompleted,
     unlocked: true,
+    activePlan,
     addictions: [
       {
         id: latestResult.resultId,

@@ -2,19 +2,21 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { MessageSquare, Mic, FileText, BarChart3, History as HistoryIcon } from 'lucide-react'
+import { MessageSquare, Mic, BarChart3, History as HistoryIcon, ClipboardList } from 'lucide-react'
 import { createSession, getResults } from '@/frontend/lib/api'
 import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
   const router = useRouter()
   const [sessionsCompleted, setSessionsCompleted] = useState(0)
+  const [hasPlan, setHasPlan] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadData() {
       const results = await getResults()
       setSessionsCompleted(results.sessionsCompleted)
+      setHasPlan(Boolean(results.activePlan))
       setLoading(false)
     }
     loadData()
@@ -125,7 +127,51 @@ export default function HomePage() {
       </div>
 
       
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {hasPlan && (
+            <Link
+              href="/app/plan"
+            className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all"
+            style={{
+              borderColor: 'rgba(227, 155, 99, 0.2)',
+              backgroundColor: 'var(--color-card-bg)',
+              color: 'var(--color-text-dark)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-accent)'
+              e.currentTarget.style.backgroundColor = 'rgba(227, 155, 99, 0.05)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(227, 155, 99, 0.2)'
+              e.currentTarget.style.backgroundColor = 'var(--color-card-bg)'
+            }}
+          >
+            <ClipboardList className="h-6 w-6" style={{ color: 'var(--color-accent)' }} />
+            <span className="text-sm font-medium">My Plan</span>
+          </Link>
+          )}
+
+          <Link
+            href="/app/assessment"
+          className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all"
+          style={{
+            borderColor: 'rgba(227, 155, 99, 0.2)',
+            backgroundColor: 'var(--color-card-bg)',
+            color: 'var(--color-text-dark)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)'
+            e.currentTarget.style.backgroundColor = 'rgba(227, 155, 99, 0.05)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(227, 155, 99, 0.2)'
+            e.currentTarget.style.backgroundColor = 'var(--color-card-bg)'
+          }}
+        >
+          <ClipboardList className="h-6 w-6" style={{ color: 'var(--color-accent)' }} />
+          <span className="text-sm font-medium">Take Assessment</span>
+        </Link>
+
           <Link
             href="/app/sessions"
           className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all"

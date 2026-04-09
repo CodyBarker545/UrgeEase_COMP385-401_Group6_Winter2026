@@ -1,267 +1,287 @@
-# UrgeEase  
-### AI-Powered Behavioral Recovery Support Application
+﻿# UrgeEase
 
-UrgeEase is an **AI-powered support application** designed to help users manage behavioral addictions such as excessive **social media usage and pornography consumption**.
+UrgeEase is a full-stack recovery support app for behavioral addictions. It combines:
 
-The system combines **machine learning risk prediction** with **AI-generated behavioral guidance**.
+- a Next.js frontend for authentication, chat, assessments, results, history, and plans
+- a Flask backend for API routes, MongoDB persistence, ML inference, and RAG-based chat
+- two Random Forest models for assessment scoring
+- a retrieval-augmented chat assistant with Gemini and a demo fallback
 
----
+## Current Product Flow
 
-# System Architecture
+1. A user registers or signs in from the frontend.
+2. The frontend creates or resumes a session.
+3. The user can chat with the assistant, and both user and assistant messages are stored in MongoDB.
+4. The user can complete the assessment at `/app/assessment`.
+5. The backend runs both Random Forest models, stores the raw answers in `assessments`, stores model outputs in `results`, and creates a recovery plan in `plans`.
+6. The latest results and active plan are used to guide future chat responses.
 
-UrgeEase consists of two main components:
+## Stack
 
-1. **Python RAG Backend**
-   - LangChain
-   - FAISS vector database
-   - Machine learning models for addiction risk prediction
+### Frontend
 
-2. **Next.js Frontend**
-   - React
-   - Node.js
-   - User questionnaire and interface
+- Next.js 14
+- React
+- TypeScript
 
----
+### Backend
 
-# Prerequisites
+- Flask
+- PyMongo / MongoDB Atlas
+- LangChain + FAISS
+- Google Gemini
+- joblib-loaded Random Forest models
 
-Before installing the project, ensure the following are installed:
+## Repository Layout
 
-- **Python 3.11 or 3.12 (recommended)**
-- **Node.js 18 or higher**
-- **npm**
-- **Git**
-
-Check versions:
-
-```bash
-python --version
-node --version
-npm --version
+```text
+UrgeEase/
+  frontend/          Next.js app
+  backend/           Flask API, ML, RAG, MongoDB services
+  backend/db/        Mongo setup script and DB docs
+  backend/routes/    Flask blueprints
+  backend/services/  Business logic
+  backend/Rag/       Retrieval data, vector store, and setup docs
 ```
 
----
+## Prerequisites
 
-# Installation Instructions
+- Python 3.11 or 3.12
+- Node.js 18+
+- npm
+- MongoDB Atlas connection string
+- Gemini API key for live RAG responses
 
-## Backend Setup (Python)
+## Backend Setup
 
-Navigate to the backend folder:
+From the repository root:
 
-```bash
+```powershell
 cd backend
-```
-
-Create a virtual environment:
-
-```bash
 python -m venv .venv
-```
-
-If you have multiple Python versions installed:
-
-```bash
-py -3.11 -m venv .venv
-```
-
-Activate the virtual environment.
-
-### Windows
-
-```bash
 .\.venv\Scripts\Activate.ps1
-```
-
-### Mac / Linux
-
-```bash
-source .venv/bin/activate
-```
-
-Install required Python packages:
-
-```bash
 pip install -r requirements.txt
 ```
 
-Run unit tests (optional):
+Create `backend/.env`:
 
-```bash
-python -m pytest
+```text
+MONGO_URI=your_mongodb_connection_string
+MONGO_DB_NAME=UrgeEase
+FLASK_ENV=development
+GEMINI_API_KEY=your_actual_key_here
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 Initialize MongoDB collections and indexes:
 
-```bash
+From `backend`:
+
+```powershell
+python db\init_db.py
+```
+
+From `backend\db`:
+
+```powershell
 python init_db.py
 ```
 
----
+Start the backend:
 
-## Frontend Setup (Next.js)
+```powershell
+python app.py
+```
 
-Navigate to the frontend folder:
+Backend default URL:
 
-```bash
+```text
+http://localhost:5000
+```
+
+## Frontend Setup
+
+From the repository root:
+
+```powershell
 cd frontend
-```
-
-Install Node dependencies:
-
-```bash
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-The frontend will be available at:
+Frontend default URL:
 
-```
+```text
 http://localhost:3000
 ```
 
----
+Optional frontend environment variable:
 
-# Environment Variables
-
-Create a `.env` file in the `backend` folder for the backend API and MongoDB connection.
-
-Example:
-
-```
-MONGO_URI=your_mongodb_connection_string
-MONGO_DB_NAME=UrgeEase
-FLASK_ENV=development
+```text
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 ```
 
-**Important:**  
-Do **NOT** commit `.env` files to GitHub.
+If this variable is not set, the frontend defaults to `http://localhost:5000`.
 
----
+## Main User Features
 
-# Running the RAG Backend (Demo)
+### Authentication
 
-From the backend folder:
+- Sign up and sign in through the Flask API
+- User records are stored in MongoDB
 
-```bash
-python -m Rag.demo_rag
+### Sessions and Chat
+
+- Sessions are created per user
+- Chat messages are stored in the `messages` collection
+- Assistant replies are also stored, so past advice can be reviewed later
+- Chat uses:
+  - recent message history
+  - latest saved assessment results
+  - previous result history for trend summaries
+  - the user's active recovery plan
+- If Gemini is unavailable, the backend returns a shorter demo fallback response instead of failing the chat
+
+### Assessment Flow
+
+The frontend submits the full questionnaire to:
+
+```text
+POST /api/assessments
 ```
 
-This demo:
+The backend then:
 
-- loads example recovery documents
-- builds a **FAISS vector index**
-- performs retrieval-augmented generation queries
+1. validates the request
+2. runs the addiction-score Random Forest model
+3. runs the dependence-risk Random Forest model
+4. stores raw questionnaire answers in `assessments`
+5. stores model outputs in `results`
+6. links each result back to the assessment with `assessmentId`
+7. creates a new active recovery plan in `plans`
 
-Example document sources:
+### Results and History
 
+- Results are stored separately from assessments
+- This keeps raw answers and derived model outputs cleanly separated
+- The app can compare recent results over time and use them in chat context
+
+### Recovery Plans
+
+After each assessment, the backend creates an active plan based on the latest answers.
+
+The plan includes:
+
+- a focus area such as `distractibility`, `sleep`, `validation`, or `mindless_use`
+- a short summary
+- two goals
+- three practical actions
+
+When a new plan is created, older active plans for that user are archived.
+
+## MongoDB Collections
+
+`users`
+- account records
+
+`sessions`
+- chat or voice session metadata
+
+`messages`
+- stored user and assistant conversation turns
+
+`results`
+- model outputs only
+- linked to `userId`, `sessionId`, and `assessmentId`
+
+`assessments`
+- full submitted questionnaire answers
+- linked result summaries and result IDs
+
+`plans`
+- active or archived user recovery plans created from assessments
+
+`trigger_logs`
+- optional trigger-tracking records
+
+`crisis_resources`
+- crisis support resources used by the app
+
+## Key API Routes
+
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+### Sessions
+
+- `POST /api/sessions`
+- `GET /api/sessions/user/<user_id>`
+- `GET /api/sessions/<session_id>`
+
+### Chat
+
+- `POST /api/sessions/<session_id>/chat`
+
+### Assessments
+
+- `POST /api/assessments`
+
+### Results
+
+- `GET /api/results/user/<user_id>`
+- `GET /api/results/user/<user_id>/latest`
+- `GET /api/results/<result_id>`
+
+### Plans
+
+- `GET /api/plans/user/<user_id>/active`
+- `PATCH /api/plans/<plan_id>/actions/<action_id>`
+
+## RAG and Gemini
+
+The backend RAG flow:
+
+- loads support documents from `backend/Rag/data`
+- builds or reuses a FAISS vector store in `backend/Rag/vectorstore`
+- retrieves relevant support content
+- sends the final prompt to Gemini
+
+The live chat path uses Gemini through `backend/services/llm_service.py`.
+
+If Gemini is overloaded or unavailable:
+
+- the backend catches the error
+- the app returns a supportive demo fallback response
+- chat can continue instead of showing a raw model failure
+
+## Testing Notes
+
+Type-check the frontend:
+
+```powershell
+cd frontend
+npx tsc --noEmit --pretty false
 ```
-backend/Rag/data/
+
+Run backend tests if present:
+
+```powershell
+cd backend
+python -m pytest
 ```
 
-Example files include:
+## Important Notes
 
-- rag_data.txt  
-- coping_strategies.txt  
-- trigger_tracking.txt  
-- sleep_and_routine.txt  
+- `results` stores derived model outputs, not the full questionnaire
+- `assessments` stores the full raw answers
+- `plans` are generated from the most recent assessment
+- chat persists both the user message and the assistant response
+- chat can discuss prior results and the user's current active plan
 
-The FAISS index is generated in:
+## Security Notice
 
-```
-backend/Rag/vectorstore/
-```
+UrgeEase is not a licensed medical or mental health service.
 
-The `vectorstore/` folder is created automatically and is **ignored by git**.
-
----
-
-# Machine Learning Models
-
-UrgeEase includes **addiction risk prediction models** trained on two datasets.
-
-### Dataset 1 — Social Media Addiction vs Relationships
-
-Accuracy:
-
-| Model | Accuracy |
-|------|--------|
-| Random Forest | **94.33%** |
-| XGBoost | **94.33%** |
-
----
-
-### Dataset 2 — Social Media Behavioral Survey
-
-Weighted behavioral scoring was used to generate addiction risk labels.
-
-| Model | Accuracy |
-|------|--------|
-| Random Forest | **85.42%** |
-| XGBoost | **83.33%** |
-
-Random Forest performed best on behavioral survey data.
-
----
-
-# Development Notes
-
-- Backend uses **FAISS** for local vector storage
-- **HashEmbeddings** enable offline testing
-- Crisis detection prevents unsafe responses
-- Frontend built using **Next.js 14**
-- Prediction result saves now require both `userId` and `sessionId`
-- Result history endpoints query saved results by linked `userId`
-- Chat responses use saved assessment history when a valid user/session pair is provided
-
----
-
-# Backend API Flow
-
-Typical backend flow for a full assessment and chat session:
-
-1. Register or log in a user to get a `userId`
-2. Create a session to get a `sessionId`
-3. Submit both IDs when calling:
-   - `POST /api/predict/addiction-score`
-   - `POST /api/predict/dependence-risk`
-4. Retrieve stored history with:
-   - `GET /api/results/user/<userId>`
-5. Continue the recovery chat with:
-   - `POST /api/sessions/<sessionId>/chat`
-
-Important request rule:
-
-- `userId` must be the registered user ID
-- `sessionId` must be the session created for that user
-- The chat route uses the `sessionId` in the URL and the `userId` in the JSON body
-
-Example chat request:
-
-```json
-{
-  "userId": "<userId>",
-  "message": "I keep checking social media when I get bored at night. What should I do instead?"
-}
-```
-
----
-
-# Security Notice
-
-UrgeEase is **NOT a licensed medical or mental health tool**.
-
-If a user expresses suicidal intent, the system provides **crisis resources instead of advice**.
-
----
-
-# Authors
-
-**UrgeEase Capstone Project – Group 6**
-
-Software Engineering Technology – Artificial Intelligence  
-Centennial College
+If a user expresses self-harm or suicide intent, the system should return crisis-oriented support instead of normal coaching.
