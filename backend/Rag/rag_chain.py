@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 
+from google import genai
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -242,6 +243,38 @@ def fake_llm(prompt: str) -> str:
         f"{sources_str}"
     )
 
+def gemini_llm(prompt: str) -> str:
+    """
+    Real Gemini-backed LLM function.
+    Requires GEMINI_API_KEY in environment.
+    """
+    print("[gemini_llm] starting")
+
+    from google import genai
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not set.")
+
+    print("[gemini_llm] api key found")
+
+    client = genai.Client(api_key=api_key)
+    print("[gemini_llm] client created")
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
+
+    print("[gemini_llm] response received")
+
+    text = getattr(response, "text", None)
+    if not text:
+        print("[gemini_llm] empty text response")
+        raise RuntimeError("Gemini returned an empty response.")
+
+    print("[gemini_llm] returning text")
+    return text
 
 # main rag chain
 class UrgeEaseRAGChain:
@@ -253,7 +286,7 @@ class UrgeEaseRAGChain:
     ):
         self.cfg = cfg
         self.embeddings = embeddings
-        self.llm_fn = llm_fn or fake_llm
+        self.llm_fn = llm_fn or gemini_llm
         self.vectorstore = build_or_load_vectorstore(cfg, embeddings)
 
         # build retriever
