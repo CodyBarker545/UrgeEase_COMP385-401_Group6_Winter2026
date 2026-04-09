@@ -1,8 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useAuthStore } from '@/frontend/lib/store'
+import { createSession } from '@/frontend/lib/api'
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000'
 
 export default function AssessmentPage() {
+    const user = useAuthStore((state) => state.user)
     const [form, setForm] = useState({
         Age: "",
         Gender: "",
@@ -43,13 +48,25 @@ export default function AssessmentPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        if (!user?.id) {
+            console.error('A signed-in user is required to submit the assessment.')
+            return
+        }
+
         try {
-            const dependenceRes = await fetch("http://localhost:5000/api/predict/dependence-risk", {
+            const { sessionId } = await createSession({ mode: 'chat' })
+            const payload = {
+                ...form,
+                userId: user.id,
+                sessionId,
+            }
+
+            const dependenceRes = await fetch(`${BACKEND_URL}/api/predict/dependence-risk`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(form)
+                body: JSON.stringify(payload)
             });
 
             if (!dependenceRes.ok) {
@@ -60,12 +77,12 @@ export default function AssessmentPage() {
 
             const dependenceData = await dependenceRes.json();
 
-            const addictionRes = await fetch("http://localhost:5000/api/predict/addiction-score", {
+            const addictionRes = await fetch(`${BACKEND_URL}/api/predict/addiction-score`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(form)
+                body: JSON.stringify(payload)
             });
 
             if (!addictionRes.ok) {

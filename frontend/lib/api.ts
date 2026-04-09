@@ -13,307 +13,360 @@ import type {
   AuthResponse,
 } from './types'
 
-const STORAGE_KEYS = {
-  USERS: 'urgeease_mock_users',
-  SESSIONS: 'urgeease_mock_sessions',
-  MESSAGES: 'urgeease_mock_messages',
-  SESSIONS_COMPLETED: 'urgeease_sessions_completed',
-}
-function getStorage<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') return defaultValue
-  try {
-    const item = localStorage.getItem(key)
-    return item ? JSON.parse(item) : defaultValue
-  } catch {
-    return defaultValue
-  }
+const AUTH_STORAGE_KEY = 'urgeease-auth'
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000'
+
+type BackendUser = {
+  userId: string
+  email: string
+  preferredName?: string
+  emailVerified?: boolean
+  createdAt?: string | null
 }
 
-function setStorage<T>(key: string, value: T): void {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch (e) {
-    console.error('Failed to save to localStorage', e)
-  }
-}
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-export async function signUp(data: SignUpRequest): Promise<AuthResponse> {
-  await delay(800)
-  const users = getStorage<User[]>(STORAGE_KEYS.USERS, [])
-  
-  if (users.some((u) => u.email === data.email)) {
-    return { ok: false, error: 'Email already registered' }
-  }
-
-  const newUser: User = {
-    id: `user_${Date.now()}`,
-    email: data.email,
-    name: data.name,
-    createdAt: new Date().toISOString(),
-  }
-
-  users.push(newUser)
-  setStorage(STORAGE_KEYS.USERS, users)
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem(`verify_${data.email}`, '123456')
-  }
-
-  return { ok: true }
+type BackendSession = {
+  sessionId: string
+  mode: 'chat' | 'voice'
+  messageCount: number
+  createdAt: string
+  startedAt?: string | null
+  endedAt?: string | null
+  status?: string
 }
 
-export async function verifyEmail(data: VerifyEmailRequest): Promise<AuthResponse> {
-  await delay(600)
-  const storedCode = typeof window !== 'undefined' ? sessionStorage.getItem(`verify_${data.email}`) : null
-  if (data.code !== '123456' && data.code !== storedCode) {
-    return { ok: false, error: 'Invalid verification code' }
-  }
-
-  const users = getStorage<User[]>(STORAGE_KEYS.USERS, [])
-  const user = users.find((u) => u.email === data.email)
-  if (!user) {
-    return { ok: false, error: 'User not found' }
-  }
-
-  const token = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  return { ok: true, token, user }
+type BackendMessage = {
+  messageId: string
+  sessionId: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  createdAt: string
 }
 
-export async function signIn(data: SignInRequest): Promise<AuthResponse> {
-  await delay(600)
-  const users = getStorage<User[]>(STORAGE_KEYS.USERS, [])
-  const user = users.find((u) => u.email === data.email)
-
-  if (!user) {
-    return { ok: false, error: 'Invalid email or password' }
-  }
-  const token = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  return { ok: true, token, user }
+type BackendResult = {
+  resultId: string
+  userId?: string | null
+  sessionId?: string | null
+  generatedAt?: string | null
+  addictionScore?: number | null
+  predictedClass?: string | null
+  riskLevel?: string | number | null
+  topTriggers?: string[]
+  recommendations?: string[]
 }
 
-export async function getMe(): Promise<User | null> {
-  await delay(300)
-  const token = typeof window !== 'undefined' ? localStorage.getItem('urgeease-auth') : null
-  if (!token) return null
+type PendingVerification = {
+  userId: string
+  email: string
+  preferredName: string
+}
+
+function getJsonStorage<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null
 
   try {
-    const authData = JSON.parse(token || '{}')
-    const users = getStorage<User[]>(STORAGE_KEYS.USERS, [])
-    return users.find((u) => u.id === authData.state?.user?.id) || null
+    const raw = localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : null
   } catch {
     return null
   }
 }
-export async function createSession(data: CreateSessionRequest): Promise<{ sessionId: string }> {
-  await delay(400)
-  const sessions = getStorage<SessionSummary[]>(STORAGE_KEYS.SESSIONS, [])
-  const sessionId = `session_${Date.now()}`
-  
-  const newSession: SessionSummary = {
-    id: sessionId,
-    mode: data.mode,
-    createdAt: new Date().toISOString(),
-    messageCount: 0,
+
+function getCurrentUser(): User | null {
+  const authState = getJsonStorage<{ state?: { user?: User } }>(AUTH_STORAGE_KEY)
+  return authState?.state?.user ?? null
+}
+
+function getCurrentUserId(): string | null {
+  return getCurrentUser()?.id ?? null
+}
+
+function buildToken(userId: string): string {
+  return `backend_${userId}`
+}
+
+function toUser(user: BackendUser): User {
+  return {
+    id: user.userId,
+    email: user.email,
+    name: user.preferredName,
+    createdAt: user.createdAt ?? new Date().toISOString(),
+  }
+}
+
+function toSessionSummary(session: BackendSession): SessionSummary {
+  return {
+    id: session.sessionId,
+    mode: session.mode,
+    createdAt: session.createdAt ?? new Date().toISOString(),
+    lastMessageAt: session.endedAt ?? session.startedAt ?? session.createdAt,
+    messageCount: session.messageCount ?? 0,
+  }
+}
+
+function toConfidence(result: BackendResult): number {
+  const numericScore = typeof result.addictionScore === 'number' ? result.addictionScore : null
+  if (numericScore !== null) {
+    return Math.max(0, Math.min(100, Math.round(numericScore)))
   }
 
-  sessions.push(newSession)
-  setStorage(STORAGE_KEYS.SESSIONS, sessions)
+  const risk = String(result.riskLevel ?? '').toLowerCase()
+  if (risk.includes('high')) return 85
+  if (risk.includes('medium') || risk.includes('moderate')) return 65
+  if (risk.includes('low')) return 35
+  return 50
+}
 
-  return { sessionId }
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${BACKEND_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers ?? {}),
+    },
+  })
+
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data?.error || 'Request failed')
+  }
+
+  return data as T
+}
+
+export async function signUp(data: SignUpRequest): Promise<AuthResponse> {
+  try {
+    const result = await apiRequest<BackendUser>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        preferredName: data.name,
+      }),
+    })
+
+    if (typeof window !== 'undefined') {
+      const pending: PendingVerification = {
+        userId: result.userId,
+        email: result.email,
+        preferredName: result.preferredName ?? data.name,
+      }
+      sessionStorage.setItem(`verify_${result.email}`, '123456')
+      sessionStorage.setItem(`pending_verify_${result.email}`, JSON.stringify(pending))
+    }
+
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Unable to create account' }
+  }
+}
+
+export async function verifyEmail(data: VerifyEmailRequest): Promise<AuthResponse> {
+  try {
+    const storedCode = typeof window !== 'undefined' ? sessionStorage.getItem(`verify_${data.email}`) : null
+    if (data.code !== '123456' && data.code !== storedCode) {
+      return { ok: false, error: 'Invalid verification code' }
+    }
+
+    const pending = typeof window !== 'undefined'
+      ? sessionStorage.getItem(`pending_verify_${data.email}`)
+      : null
+
+    if (!pending) {
+      return { ok: false, error: 'No pending verification found' }
+    }
+
+    const parsedPending = JSON.parse(pending) as PendingVerification
+    const updatedUser = await apiRequest<BackendUser>(`/api/auth/user/${parsedPending.userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ emailVerified: true }),
+    })
+
+    return {
+      ok: true,
+      token: buildToken(updatedUser.userId),
+      user: toUser(updatedUser),
+    }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Unable to verify email' }
+  }
+}
+
+export async function signIn(data: SignInRequest): Promise<AuthResponse> {
+  try {
+    const result = await apiRequest<BackendUser>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+
+    const fullUser = await apiRequest<BackendUser>(`/api/auth/user/${result.userId}`)
+
+    return {
+      ok: true,
+      token: buildToken(result.userId),
+      user: toUser(fullUser),
+    }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Unable to sign in' }
+  }
+}
+
+export async function getMe(): Promise<User | null> {
+  const userId = getCurrentUserId()
+  if (!userId) return null
+
+  try {
+    const result = await apiRequest<BackendUser>(`/api/auth/user/${userId}`)
+    return toUser(result)
+  } catch {
+    return null
+  }
+}
+
+export async function createSession(data: CreateSessionRequest): Promise<{ sessionId: string }> {
+  const userId = getCurrentUserId()
+  if (!userId) {
+    throw new Error('You must be signed in to create a session')
+  }
+
+  const result = await apiRequest<{ sessionId: string }>('/api/sessions', {
+    method: 'POST',
+    body: JSON.stringify({
+      userId,
+      mode: data.mode,
+    }),
+  })
+
+  return { sessionId: result.sessionId }
 }
 
 export async function getSessions(): Promise<SessionSummary[]> {
-  await delay(300)
-  return getStorage<SessionSummary[]>(STORAGE_KEYS.SESSIONS, [])
+  const userId = getCurrentUserId()
+  if (!userId) return []
+
+  const result = await apiRequest<{ sessions: BackendSession[] }>(`/api/sessions/user/${userId}`)
+  return result.sessions.map(toSessionSummary)
 }
 
 export async function getSessionMessages(sessionId: string): Promise<Message[]> {
-  await delay(300)
-  const messages = getStorage<Message[]>(STORAGE_KEYS.MESSAGES, [])
-  return messages.filter((m) => m.sessionId === sessionId).sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  )
+  const [session, messages] = await Promise.all([
+    apiRequest<BackendSession>(`/api/sessions/detail/${sessionId}`),
+    apiRequest<{ messages: BackendMessage[] }>(`/api/sessions/${sessionId}/messages`),
+  ])
+
+  return messages.messages.map((message) => ({
+    id: message.messageId,
+    sessionId: message.sessionId,
+    role: message.role,
+    content: message.content,
+    createdAt: message.createdAt,
+    mode: session.mode ?? 'chat',
+  }))
 }
 
 export async function sendMessage(data: SendMessageRequest): Promise<SendMessageResponse> {
-  await delay(1200) 
-
-  const messages = getStorage<Message[]>(STORAGE_KEYS.MESSAGES, [])
-  const sessions = getStorage<SessionSummary[]>(STORAGE_KEYS.SESSIONS, [])
-  const userMessage: Message = {
-    id: `msg_${Date.now()}_user`,
-    sessionId: data.sessionId,
-    role: 'user',
-    content: data.text,
-    createdAt: new Date().toISOString(),
-    mode: data.mode,
-  }
-  messages.push(userMessage)
-  const responses = [
-    "I hear you. Let's take a moment to notice what's happening without judgment.",
-    "That sounds difficult. What do you notice in your body right now?",
-    "It's okay to feel this way. These feelings will pass. Can you name one thing you're grateful for today?",
-    "I'm here with you. Let's try a simple breathing exercise: breathe in for 4 counts, hold for 4, out for 4.",
-  ]
-  const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-
-  const assistantMessage: Message = {
-    id: `msg_${Date.now()}_assistant`,
-    sessionId: data.sessionId,
-    role: 'assistant',
-    content: randomResponse,
-    createdAt: new Date().toISOString(),
-    mode: data.mode,
-  }
-  messages.push(assistantMessage)
-  const session = sessions.find((s) => s.id === data.sessionId)
-  if (session) {
-    session.messageCount = messages.filter((m) => m.sessionId === data.sessionId).length
-    session.lastMessageAt = new Date().toISOString()
+  const userId = getCurrentUserId()
+  if (!userId) {
+    throw new Error('You must be signed in to send a message')
   }
 
-  setStorage(STORAGE_KEYS.MESSAGES, messages)
-  setStorage(STORAGE_KEYS.SESSIONS, sessions)
-  const crisisFlag = Math.random() > 0.9 && data.text.toLowerCase().includes('hurt')
+  const response = await apiRequest<{
+    assistantResponse: string
+    assistantMessageId: string
+    crisis?: boolean
+  }>(`/api/sessions/${data.sessionId}/chat`, {
+    method: 'POST',
+    body: JSON.stringify({
+      userId,
+      message: data.text,
+    }),
+  })
 
   return {
-    assistantMessage,
-    crisisFlag,
+    assistantMessage: {
+      id: response.assistantMessageId,
+      sessionId: data.sessionId,
+      role: 'assistant',
+      content: response.assistantResponse,
+      createdAt: new Date().toISOString(),
+      mode: data.mode,
+    },
+    crisisFlag: response.crisis ?? false,
   }
 }
+
 export async function getResults(): Promise<ResultsSummary> {
-  await delay(400)
-  const sessions = getStorage<SessionSummary[]>(STORAGE_KEYS.SESSIONS, [])
-  const sessionsCompleted = sessions.filter((s) => s.messageCount > 0).length
+  const userId = getCurrentUserId()
+  if (!userId) {
+    return { sessionsCompleted: 0, addictions: [], unlocked: false }
+  }
 
-  const unlocked = sessionsCompleted >= 3
+  const [sessions, latestResult] = await Promise.all([
+    getSessions(),
+    apiRequest<BackendResult>(`/api/results/latest/${userId}`).catch(() => null),
+  ])
 
-  const addictions: ResultsSummary['addictions'] = unlocked
-    ? [
-        {
-          id: 'social_media',
-          name: 'Social Media',
-          confidence: 78,
-          topTriggers: ['Evening hours', 'Boredom', 'Bedroom', 'Negative thoughts'],
-        },
-        {
-          id: 'pornography',
-          name: 'Pornography',
-          confidence: 65,
-          topTriggers: ['Stress', 'Loneliness', 'Late night', 'Alone time'],
-        },
-      ]
-    : []
+  const sessionsCompleted = sessions.filter((session) => session.messageCount > 0).length
+  if (!latestResult) {
+    return {
+      sessionsCompleted,
+      addictions: [],
+      unlocked: false,
+    }
+  }
 
   return {
     sessionsCompleted,
-    addictions,
-    unlocked,
+    unlocked: true,
+    addictions: [
+      {
+        id: latestResult.resultId,
+        name: 'Social Media Dependence',
+        confidence: toConfidence(latestResult),
+        topTriggers: latestResult.topTriggers ?? [],
+      },
+    ],
   }
 }
 
 export async function getAddictionDetail(addictionId: string): Promise<AddictionDetail | null> {
-  await delay(300)
-  
-  if (addictionId === 'social_media') {
+  try {
+    const result = await apiRequest<BackendResult>(`/api/results/${addictionId}`)
+    const triggers = result.topTriggers ?? []
+
     return {
-      id: 'social_media',
-      name: 'Social Media',
-      confidence: 78,
+      id: result.resultId,
+      name: 'Social Media Dependence',
+      confidence: toConfidence(result),
       triggers: [
         {
-          category: 'temporal',
-          triggers: ['Evening hours (6-10pm)', 'Weekend mornings'],
-          count: 12,
-        },
-        {
-          category: 'emotional',
-          triggers: ['Boredom', 'Anxiety', 'Loneliness'],
-          count: 8,
-        },
-        {
-          category: 'environmental',
-          triggers: ['Bedroom', 'Couch', 'Alone'],
-          count: 10,
-        },
-        {
           category: 'cognitive',
-          triggers: ['Negative thoughts', 'Comparison', 'FOMO'],
-          count: 6,
+          triggers: triggers.length > 0 ? triggers : ['No trigger data available yet'],
+          count: triggers.length,
         },
       ],
-      evidence: [
-        {
-          id: 'ev1',
-          sessionId: 'session_1',
-          excerpt: 'I noticed I was scrolling when I felt anxious about work.',
-          timestamp: '2026-02-05T20:30:00Z',
-        },
-        {
-          id: 'ev2',
-          sessionId: 'session_2',
-          excerpt: 'Every evening around 8pm I reach for my phone automatically.',
-          timestamp: '2026-02-06T20:15:00Z',
-        },
-      ],
+      evidence: result.recommendations?.map((recommendation, index) => ({
+        id: `${result.resultId}_rec_${index}`,
+        sessionId: result.sessionId ?? '',
+        excerpt: recommendation,
+        timestamp: result.generatedAt ?? new Date().toISOString(),
+      })) ?? [],
     }
+  } catch {
+    return null
   }
-
-  if (addictionId === 'pornography') {
-    return {
-      id: 'pornography',
-      name: 'Pornography',
-      confidence: 65,
-      triggers: [
-        {
-          category: 'temporal',
-          triggers: ['Late night (11pm-2am)', 'Early morning'],
-          count: 7,
-        },
-        {
-          category: 'emotional',
-          triggers: ['Stress', 'Loneliness', 'Rejection'],
-          count: 9,
-        },
-        {
-          category: 'environmental',
-          triggers: ['Alone', 'Bedroom', 'Private space'],
-          count: 8,
-        },
-        {
-          category: 'cognitive',
-          triggers: ['Escapism', 'Numbing', 'Self-soothing'],
-          count: 5,
-        },
-      ],
-      evidence: [
-        {
-          id: 'ev3',
-          sessionId: 'session_3',
-          excerpt: 'When I feel stressed, I use it to escape.',
-          timestamp: '2026-02-07T23:45:00Z',
-        },
-      ],
-    }
-  }
-
-  return null
 }
+
 export async function exportData(): Promise<{ downloadUrl: null }> {
-  await delay(800)
   return { downloadUrl: null }
 }
 
 export async function deleteAccount(): Promise<{ ok: boolean }> {
-  await delay(600)
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('urgeease-auth')
-    localStorage.removeItem('urgeease-preferences')
-    localStorage.removeItem('urgeease-onboarding')
-    localStorage.removeItem(STORAGE_KEYS.SESSIONS)
-    localStorage.removeItem(STORAGE_KEYS.MESSAGES)
-    localStorage.removeItem(STORAGE_KEYS.SESSIONS_COMPLETED)
+  const userId = getCurrentUserId()
+  if (!userId) {
+    return { ok: true }
   }
+
+  await apiRequest(`/api/auth/user/${userId}`, { method: 'DELETE' })
   return { ok: true }
 }
 
