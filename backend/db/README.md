@@ -16,6 +16,8 @@ This script creates:
   - `sessions`
   - `messages`
   - `results`
+  - `trigger_logs`
+  - `crisis_resources`
 
 - Indexes for:
   - faster queries
@@ -56,5 +58,21 @@ FLASK_ENV=development
 From the **backend folder**, run:
 
 ```bash
-python db/init_db.py
+python init_db.py
 ```
+
+## Notes
+
+- `init_db.py` creates collections and indexes only
+- it does not insert users, sessions, messages, or prediction results
+- application data is created through the API routes
+
+## Results Storage
+
+Prediction results in `results` are linked by:
+
+- `userId`
+- `sessionId`
+- `generatedAt`
+
+Current backend behavior requires valid `userId` and `sessionId` values when saving prediction results so that history retrieval and chat context loading work correctly.

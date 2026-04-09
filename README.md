@@ -90,6 +90,12 @@ Run unit tests (optional):
 python -m pytest
 ```
 
+Initialize MongoDB collections and indexes:
+
+```bash
+python init_db.py
+```
+
 ---
 
 ## Frontend Setup (Next.js)
@@ -122,12 +128,14 @@ http://localhost:3000
 
 # Environment Variables
 
-If using the **Gemini API**, create a `.env` file.
+Create a `.env` file in the `backend` folder for the backend API and MongoDB connection.
 
 Example:
 
 ```
-GEMINI_API_KEY=your_api_key_here
+MONGO_URI=your_mongodb_connection_string
+MONGO_DB_NAME=UrgeEase
+FLASK_ENV=development
 ```
 
 **Important:**  
@@ -206,6 +214,40 @@ Random Forest performed best on behavioral survey data.
 - **HashEmbeddings** enable offline testing
 - Crisis detection prevents unsafe responses
 - Frontend built using **Next.js 14**
+- Prediction result saves now require both `userId` and `sessionId`
+- Result history endpoints query saved results by linked `userId`
+- Chat responses use saved assessment history when a valid user/session pair is provided
+
+---
+
+# Backend API Flow
+
+Typical backend flow for a full assessment and chat session:
+
+1. Register or log in a user to get a `userId`
+2. Create a session to get a `sessionId`
+3. Submit both IDs when calling:
+   - `POST /api/predict/addiction-score`
+   - `POST /api/predict/dependence-risk`
+4. Retrieve stored history with:
+   - `GET /api/results/user/<userId>`
+5. Continue the recovery chat with:
+   - `POST /api/sessions/<sessionId>/chat`
+
+Important request rule:
+
+- `userId` must be the registered user ID
+- `sessionId` must be the session created for that user
+- The chat route uses the `sessionId` in the URL and the `userId` in the JSON body
+
+Example chat request:
+
+```json
+{
+  "userId": "<userId>",
+  "message": "I keep checking social media when I get bored at night. What should I do instead?"
+}
+```
 
 ---
 
