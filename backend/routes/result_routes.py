@@ -13,6 +13,8 @@ def get_user_results(user_id: str):
     try:
         results = result_service.get_user_results(user_id)
         return jsonify({"results": results}), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": f"Fetch results failed: {exc}"}), 500
 
@@ -24,6 +26,8 @@ def get_latest_result(user_id: str):
         if not result:
             return jsonify({"error": "No results found"}), 404
         return jsonify(result), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": f"Fetch latest result failed: {exc}"}), 500
 
@@ -35,5 +39,7 @@ def get_result_by_id(result_id: str):
         if not result:
             return jsonify({"error": "Result not found"}), 404
         return jsonify(result), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": f"Fetch result failed: {exc}"}), 500

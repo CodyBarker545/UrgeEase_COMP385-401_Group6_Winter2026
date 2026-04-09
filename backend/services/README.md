@@ -83,4 +83,25 @@ Responsibilities:
 - fetch latest result
 - fetch a result by ID
 
+Current behavior:
+
+- validates `userId`, `sessionId`, and `resultId` before querying or saving
+- saves prediction results with linked user and session references
+- supports user history lookup for dashboard views and chat context
+
 This file manages persistence of model outputs for dashboards, history, and tracking.
+
+---
+
+### `chat_service.py`
+
+Handles the session-based recovery assistant flow.
+
+Responsibilities:
+
+- load recent session message history
+- load latest and previous assessment results for the user
+- build assessment context for RAG generation
+- save both user and assistant chat messages
+- fall back to the session owner when resolving chat result context
+This file manages recovery-assistant response generation and persistence for chat sessions.
