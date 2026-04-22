@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { MessageSquare, BarChart3, History as HistoryIcon, ClipboardList } from 'lucide-react'
+import { MessageSquare, BarChart3, ClipboardList } from 'lucide-react'
 import { createSession, getResults } from '@/frontend/lib/api'
 import { useRouter } from 'next/navigation'
 
@@ -213,7 +213,7 @@ export default function HomePage() {
         </Link>
 
           <Link
-            href="/app/history"
+            href="/app/sessions"
           className="flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all"
           style={{
             borderColor: 'rgba(227, 155, 99, 0.2)',
@@ -229,8 +229,8 @@ export default function HomePage() {
             e.currentTarget.style.backgroundColor = 'var(--color-card-bg)'
           }}
         >
-          <HistoryIcon className="h-6 w-6" style={{ color: 'var(--color-accent)' }} />
-          <span className="text-sm font-medium">View History</span>
+          <MessageSquare className="h-6 w-6" style={{ color: 'var(--color-accent)' }} />
+          <span className="text-sm font-medium">View Sessions</span>
         </Link>
       </div>
 

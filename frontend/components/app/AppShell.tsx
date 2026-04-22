@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, MessageSquare, Mic, BarChart3, History, Settings, AlertCircle, Menu, X, UserCircle, ClipboardList, ListChecks } from 'lucide-react'
+import { Home, MessageSquare, Mic, BarChart3, Settings, AlertCircle, Menu, X, UserCircle, ClipboardList, ListChecks } from 'lucide-react'
 import { useAuthStore } from '@/frontend/lib/store'
 import { cn } from '@/frontend/lib/utils'
 
@@ -23,7 +23,6 @@ export function AppShell({ children }: AppShellProps) {
     { href: '/app/plan', label: 'Plan', icon: ListChecks },
     { href: '/app/sessions', label: 'Sessions', icon: MessageSquare },
     { href: '/app/results', label: 'Results', icon: BarChart3 },
-    { href: '/app/history', label: 'History', icon: History },
     { href: '/app/settings', label: 'Settings', icon: Settings },
   ]
 
@@ -37,15 +36,15 @@ export function AppShell({ children }: AppShellProps) {
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
       
       <aside
-        className="hidden md:flex md:flex-col md:w-64 md:border-r"
+        className="hidden md:flex md:flex-col md:w-72 md:border-r"
         style={{
           backgroundColor: 'var(--color-card-bg)',
           borderColor: 'rgba(227, 155, 99, 0.2)',
         }}
       >
-        <div className="flex h-16 items-center gap-3 border-b px-6" style={{ borderColor: 'rgba(227, 155, 99, 0.2)' }}>
+        <div className="flex h-[72px] items-center gap-3 border-b px-6" style={{ borderColor: 'rgba(227, 155, 99, 0.2)' }}>
           <div
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold"
             style={{
               border: '1px solid rgba(227, 155, 99, 0.3)',
               backgroundColor: 'rgba(227, 155, 99, 0.1)',
@@ -54,11 +53,11 @@ export function AppShell({ children }: AppShellProps) {
           >
             UE
           </div>
-          <span className="font-semibold tracking-tight" style={{ color: 'var(--color-text-dark)', fontFamily: 'var(--font-primary)' }}>
+          <span className="text-base font-semibold tracking-tight" style={{ color: 'var(--color-text-dark)', fontFamily: 'var(--font-primary)' }}>
             UrgeEase
           </span>
         </div>
-        <nav className="flex-1 space-y-1 p-4">
+        <nav className="flex-1 space-y-1.5 p-4">
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
@@ -67,7 +66,7 @@ export function AppShell({ children }: AppShellProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-lg px-4 py-2.5 text-[15px] font-medium transition-colors',
                   active
                     ? 'font-semibold'
                     : 'hover:bg-opacity-50'
@@ -92,7 +91,7 @@ export function AppShell({ children }: AppShellProps) {
         <div className="border-t p-4" style={{ borderColor: 'rgba(227, 155, 99, 0.2)' }}>
           <Link
             href="/app/crisis"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+            className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-[15px] font-medium transition-colors"
             style={{ color: '#dc2626' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'rgba(220, 38, 38, 0.1)'
@@ -107,7 +106,7 @@ export function AppShell({ children }: AppShellProps) {
           {user && (
             <Link
               href="/app/profile"
-              className="mt-3 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
+              className="mt-3 flex items-center gap-3 rounded-lg px-4 py-2.5 text-[15px] transition-colors"
               style={{ color: 'var(--color-text-dark)' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgba(227, 155, 99, 0.08)'
@@ -118,10 +117,10 @@ export function AppShell({ children }: AppShellProps) {
             >
               <UserCircle className="h-5 w-5" style={{ color: 'var(--color-accent)' }} />
               <div className="min-w-0">
-                <p className="truncate text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="truncate text-sm" style={{ color: 'var(--color-text-muted)' }}>
                   {user.email}
                 </p>
-                <p className="text-xs font-medium">Profile &amp; Analytics</p>
+                <p className="text-sm font-medium">Profile &amp; Analytics</p>
               </div>
             </Link>
           )}
@@ -239,7 +238,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         )}
 
-        <div className="p-4 md:p-8">{children}</div>
+        <div className="p-5 md:p-8">{children}</div>
       </main>
 
       

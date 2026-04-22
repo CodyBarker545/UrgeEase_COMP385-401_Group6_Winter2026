@@ -353,6 +353,122 @@ class ChatService:
         ]
         return any(term in lowered for term in crisis_terms)
 
+    # Checks if the user is asking about their plan.
+    @staticmethod
+    def _is_plan_question(text: str | None) -> bool:
+        if not text:
+            return False
+        lowered = text.lower()
+        plan_terms = ["plan", "next action", "goal", "goals", "what should i do", "what else should i do"]
+        return any(term in lowered for term in plan_terms)
+
+    # Checks if the user is asking about assessment results or progress.
+    @staticmethod
+    def _is_results_question(text: str | None) -> bool:
+        if not text:
+            return False
+        lowered = text.lower()
+        result_terms = [
+            "assessment",
+            "result",
+            "score",
+            "risk",
+            "improving",
+            "improve",
+            "worse",
+            "worsening",
+            "progress",
+            "trend",
+        ]
+        return any(term in lowered for term in result_terms)
+
+    # Formats active plan details as a chat answer.
+    @staticmethod
+    def _build_plan_answer(active_plan: dict[str, Any] | None) -> str | None:
+        if not active_plan:
+            return (
+                "I do not see an active plan yet. Complete an assessment first, then I can explain your plan and help you work through the next action."
+            )
+
+        focus = str(active_plan.get("focusArea") or "your main focus").replace("_", " ")
+        summary = active_plan.get("summary") or f"Your current plan focuses on {focus}."
+        actions = active_plan.get("actions", []) or []
+        pending_actions = [action for action in actions if not action.get("completed")]
+        completed_actions = [action for action in actions if action.get("completed")]
+
+        if pending_actions:
+            next_action = pending_actions[0]
+            response = (
+                f"Your plan focuses on {focus}. {summary} "
+                f"The next step is: {next_action.get('title')}. {next_action.get('description')}"
+            )
+        else:
+            response = (
+                f"Your plan focuses on {focus}. {summary} "
+                "It looks like the listed actions are completed, so the next step is to keep practicing the strongest one or take another assessment to refresh the plan."
+            )
+
+        if completed_actions:
+            response += f" You have already completed: {completed_actions[0].get('title')}."
+
+        return limit_sentences(response)
+
+    # Formats assessment results and progress as a chat answer.
+    @classmethod
+    def _build_results_answer(
+        cls,
+        latest_result: dict[str, Any] | None,
+        previous_results: list[dict[str, Any]],
+        progress_summary: str,
+    ) -> str | None:
+        if not latest_result:
+            return (
+                "I do not see assessment results yet. Once you complete an assessment, I can explain your score, risk level, triggers, and whether things are improving or getting worse."
+            )
+
+        score = latest_result.get("addictionScore")
+        risk = latest_result.get("riskLevel")
+        triggers = latest_result.get("topTriggers", []) or []
+
+        lines: list[str] = []
+        if score is not None and risk:
+            lines.append(f"Your latest assessment shows an addiction score of {score} with a {risk} risk level.")
+        elif score is not None:
+            lines.append(f"Your latest assessment shows an addiction score of {score}.")
+        elif risk:
+            lines.append(f"Your latest assessment shows a {risk} risk level.")
+        else:
+            lines.append("Your latest assessment is saved, but it does not include a clear score or risk level.")
+
+        if len(previous_results) > 1:
+            previous_result = previous_results[1]
+            score_change = cls._classify_change(
+                latest_result.get("addictionScore"),
+                previous_result.get("addictionScore"),
+            )
+            risk_change = "unknown"
+            latest_risk_rank = ResultService._risk_rank(latest_result.get("riskLevel"))
+            previous_risk_rank = ResultService._risk_rank(previous_result.get("riskLevel"))
+            if latest_risk_rank is not None and previous_risk_rank is not None:
+                risk_change = cls._classify_change(latest_risk_rank, previous_risk_rank)
+
+            trend = risk_change if risk_change != "unknown" else score_change
+            if trend == "improved":
+                lines.append("Compared with your previous assessment, this looks improved.")
+            elif trend == "worsened":
+                lines.append("Compared with your previous assessment, this looks worse and may need extra attention.")
+            elif trend == "unchanged":
+                lines.append("Compared with your previous assessment, this looks about the same.")
+            else:
+                lines.append("I have prior results, but there is not enough comparable data to call the trend clearly.")
+        else:
+            lines.append("This is your baseline result, so I cannot say whether it is improving or getting worse until you complete another assessment.")
+
+        if triggers:
+            lines.append(f"Your top trigger areas are {', '.join(triggers[:3])}.")
+
+        return limit_sentences(" ".join(lines))
+
     # Cleans up the assistant response before sending it.
     @staticmethod
     def _polish_assistant_response(response: str) -> str:
@@ -488,6 +604,38 @@ class ChatService:
         active_plan = self._get_active_plan_for_chat_context(results_user_id)
         plan_context = self._format_plan_context(active_plan)
         history = self._build_chat_history(session_id)
+
+        if self._is_plan_question(user_message):
+            plan_answer = self._build_plan_answer(active_plan)
+            if plan_answer:
+                return {
+                    "assistantResponse": plan_answer,
+                    "crisis": False,
+                    "sources": ["active-plan"],
+                    "latestResult": latest_result,
+                    "previousResultsCount": len(previous_results),
+                    "resultsUserId": results_user_id,
+                    "activePlan": active_plan,
+                    "fallbackUsed": False,
+                }
+
+        if self._is_results_question(user_message):
+            results_answer = self._build_results_answer(
+                latest_result,
+                previous_results,
+                progress_summary,
+            )
+            if results_answer:
+                return {
+                    "assistantResponse": results_answer,
+                    "crisis": False,
+                    "sources": ["assessment-results"],
+                    "latestResult": latest_result,
+                    "previousResultsCount": len(previous_results),
+                    "resultsUserId": results_user_id,
+                    "activePlan": active_plan,
+                    "fallbackUsed": False,
+                }
 
         # build the user question for rag
         if user_message and user_message.strip():

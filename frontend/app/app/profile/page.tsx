@@ -119,7 +119,7 @@ export default function ProfilePage() {
         </Link>
 
         <Link
-          href="/app/history"
+          href="/app/sessions"
           className="flex items-center gap-3 rounded-lg border-2 p-4 transition-all"
           style={{ borderColor: 'rgba(227, 155, 99, 0.2)', backgroundColor: 'var(--color-card-bg)', color: 'var(--color-text-dark)' }}
           onMouseEnter={(e) => {
@@ -132,7 +132,7 @@ export default function ProfilePage() {
           }}
         >
           <Flame className="h-5 w-5" style={{ color: 'var(--color-accent)' }} />
-          Review session history
+          Review sessions
         </Link>
       </div>
     </div>

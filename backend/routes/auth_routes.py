@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
+from pymongo.errors import PyMongoError
 
 from services.auth_service import AuthService
 from utils.validators import require_fields
@@ -29,6 +30,8 @@ def register():
         return jsonify(result), 201
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 409
+    except PyMongoError:
+        return jsonify({"error": "Database connection failed. Please try again in a moment."}), 503
     except Exception as exc:
         return jsonify({"error": f"Registration failed: {exc}"}), 500
 
@@ -50,6 +53,8 @@ def login():
         return jsonify(result), 200
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 401
+    except PyMongoError:
+        return jsonify({"error": "Database connection failed. Please try again in a moment."}), 503
     except Exception as exc:
         return jsonify({"error": f"Login failed: {exc}"}), 500
 
@@ -62,6 +67,8 @@ def get_user(user_id: str):
         if not user:
             return jsonify({"error": "User not found"}), 404
         return jsonify(user), 200
+    except PyMongoError:
+        return jsonify({"error": "Database connection failed. Please try again in a moment."}), 503
     except Exception as exc:
         return jsonify({"error": f"Fetch user failed: {exc}"}), 500
 
@@ -79,6 +86,8 @@ def update_user(user_id: str):
         return jsonify(updated), 200
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
+    except PyMongoError:
+        return jsonify({"error": "Database connection failed. Please try again in a moment."}), 503
     except Exception as exc:
         return jsonify({"error": f"Update user failed: {exc}"}), 500
 
@@ -91,5 +100,7 @@ def delete_user(user_id: str):
         return jsonify({"message": "User deleted successfully"}), 200
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 404
+    except PyMongoError:
+        return jsonify({"error": "Database connection failed. Please try again in a moment."}), 503
     except Exception as exc:
         return jsonify({"error": f"Delete user failed: {exc}"}), 500

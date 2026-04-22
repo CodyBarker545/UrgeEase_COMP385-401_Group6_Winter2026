@@ -78,10 +78,12 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-size: 16px;
   }
 
   html {
     scroll-behavior: smooth;
+    font-size: 16px;
   }
 
   a {

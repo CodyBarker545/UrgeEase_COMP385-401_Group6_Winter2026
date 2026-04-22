@@ -17,6 +17,7 @@ import type {
 
 const AUTH_STORAGE_KEY = 'urgeease-auth'
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5000'
+const API_TIMEOUT_MS = 12000
 
 type BackendUser = {
   userId: string
@@ -155,20 +156,33 @@ function toConfidence(result: BackendResult): number {
 
 // Sends a request to the backend API.
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${BACKEND_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
 
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(data?.error || 'Request failed')
+  try {
+    const response = await fetch(`${BACKEND_URL}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    })
+
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(data?.error || 'Request failed')
+    }
+
+    return data as T
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('The server is taking too long to respond. Please try again.')
+    }
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
   }
-
-  return data as T
 }
 
 // Creates a new account.

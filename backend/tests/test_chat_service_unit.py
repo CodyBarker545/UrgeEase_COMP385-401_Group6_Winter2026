@@ -11,6 +11,109 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from services.chat_service import ChatService
 
 
+def test_generate_response_discusses_active_plan(monkeypatch):
+    service = ChatService()
+
+    active_plan = {
+        "planId": "plan-1",
+        "focusArea": "sleep",
+        "summary": "Your assessment suggests night-time use and sleep disruption need attention.",
+        "actions": [
+            {
+                "id": "action_1",
+                "title": "Protect the last 30 minutes",
+                "description": "Avoid social media for the final 30 minutes before bed.",
+                "completed": False,
+            },
+            {
+                "id": "action_2",
+                "title": "Move the phone away from bed",
+                "description": "Charge your phone away from your sleeping area tonight.",
+                "completed": False,
+            },
+        ],
+    }
+
+    monkeypatch.setattr(service, "_get_results_for_chat_context", lambda session_id, user_id: ([], user_id))
+    monkeypatch.setattr(service, "_build_chat_history", lambda session_id: [])
+    monkeypatch.setattr(service.plan_service, "get_active_plan", lambda user_id: active_plan)
+
+    result = service.generate_initial_or_followup_response(
+        session_id="session-1",
+        user_id="user-1",
+        user_message="what does my plan say",
+    )
+
+    assert result["fallbackUsed"] is False
+    assert result["sources"] == ["active-plan"]
+    assert result["activePlan"] == active_plan
+    assert "Protect the last 30 minutes" in result["assistantResponse"]
+    assert "Avoid social media for the final 30 minutes before bed" in result["assistantResponse"]
+
+
+def test_generate_response_discusses_baseline_assessment(monkeypatch):
+    service = ChatService()
+    latest_result = {
+        "resultId": "r1",
+        "generatedAt": "2026-04-09T12:00:00+00:00",
+        "addictionScore": 7,
+        "riskLevel": "High",
+        "topTriggers": ["sleep", "mindless_use"],
+    }
+
+    monkeypatch.setattr(service, "_get_results_for_chat_context", lambda session_id, user_id: ([latest_result], user_id))
+    monkeypatch.setattr(service, "_build_chat_history", lambda session_id: [])
+    monkeypatch.setattr(service.plan_service, "get_active_plan", lambda user_id: None)
+
+    result = service.generate_initial_or_followup_response(
+        session_id="session-1",
+        user_id="user-1",
+        user_message="what do my assessment results mean",
+    )
+
+    assert result["sources"] == ["assessment-results"]
+    assert "addiction score of 7" in result["assistantResponse"]
+    assert "High risk level" in result["assistantResponse"]
+    assert "baseline result" in result["assistantResponse"]
+    assert "sleep" in result["assistantResponse"]
+
+
+def test_generate_response_discusses_worsening_assessment(monkeypatch):
+    service = ChatService()
+    latest_result = {
+        "resultId": "r2",
+        "generatedAt": "2026-04-16T12:00:00+00:00",
+        "addictionScore": 8,
+        "riskLevel": "High",
+        "topTriggers": ["validation"],
+    }
+    previous_result = {
+        "resultId": "r1",
+        "generatedAt": "2026-04-09T12:00:00+00:00",
+        "addictionScore": 4,
+        "riskLevel": "Low",
+        "topTriggers": ["sleep"],
+    }
+
+    monkeypatch.setattr(
+        service,
+        "_get_results_for_chat_context",
+        lambda session_id, user_id: ([latest_result, previous_result], user_id),
+    )
+    monkeypatch.setattr(service, "_build_chat_history", lambda session_id: [])
+    monkeypatch.setattr(service.plan_service, "get_active_plan", lambda user_id: None)
+
+    result = service.generate_initial_or_followup_response(
+        session_id="session-1",
+        user_id="user-1",
+        user_message="is my assessment getting worse",
+    )
+
+    assert result["sources"] == ["assessment-results"]
+    assert "looks worse" in result["assistantResponse"]
+    assert "validation" in result["assistantResponse"]
+
+
 def test_generate_response_uses_active_plan_in_fallback(monkeypatch):
     service = ChatService()
 

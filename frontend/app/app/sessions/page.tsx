@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MessageSquare, Mic, Calendar } from 'lucide-react'
+import { Search, MessageSquare, Mic, Calendar } from 'lucide-react'
 import { getSessions, createSession } from '@/frontend/lib/api'
 import type { SessionSummary } from '@/frontend/lib/types'
 
@@ -11,6 +11,7 @@ import type { SessionSummary } from '@/frontend/lib/types'
 export default function SessionsPage() {
   const router = useRouter()
   const [sessions, setSessions] = useState<SessionSummary[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,6 +23,10 @@ export default function SessionsPage() {
     }
     loadSessions()
   }, [])
+
+  const filteredSessions = sessions.filter((session) =>
+    session.id.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   // Handles handle new chat.
   const handleNewChat = async () => {
@@ -37,7 +42,7 @@ export default function SessionsPage() {
             Sessions
           </h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            Your conversation history with UrgeEase
+            Search, review, and continue your conversations with UrgeEase
           </p>
         </div>
         <div className="flex gap-2">
@@ -55,6 +60,23 @@ export default function SessionsPage() {
         </div>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: 'var(--color-text-muted)' }} />
+        <input
+          type="text"
+          placeholder="Search sessions..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full rounded-lg border-2 pl-10 pr-4 py-3 text-base placeholder:text-slate-400 focus:outline-none"
+          style={{
+            borderColor: 'rgba(227, 155, 99, 0.35)',
+            backgroundColor: 'rgba(8, 13, 22, 0.92)',
+            color: '#f8fafc',
+            fontFamily: 'var(--font-primary)',
+          }}
+        />
+      </div>
+
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -65,7 +87,7 @@ export default function SessionsPage() {
             />
           ))}
         </div>
-      ) : sessions.length === 0 ? (
+      ) : filteredSessions.length === 0 ? (
         <div
           className="rounded-lg border-2 border-dashed p-12 text-center"
           style={{
@@ -75,21 +97,21 @@ export default function SessionsPage() {
         >
           <MessageSquare className="mx-auto h-12 w-12" style={{ color: 'var(--color-text-muted)' }} />
           <h3 className="mt-4 font-semibold" style={{ color: 'var(--color-text-dark)' }}>
-            No sessions yet
+            {searchQuery ? 'No sessions found' : 'No sessions yet'}
           </h3>
           <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            Start a new chat session to begin your journey.
+            {searchQuery ? 'Try a different search term.' : 'Start a new chat session to begin your journey.'}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {sessions.map((session) => {
+          {filteredSessions.map((session) => {
             const Icon = session.mode === 'chat' ? MessageSquare : Mic
             const date = new Date(session.createdAt)
             return (
               <Link
                 key={session.id}
-                href={`/app/session/${session.mode}?sessionId=${session.id}`}
+                href={`/app/sessions/${session.id}`}
                 className="flex items-center gap-4 rounded-lg border-2 p-4 transition-all"
                 style={{
                   borderColor: 'rgba(227, 155, 99, 0.2)',

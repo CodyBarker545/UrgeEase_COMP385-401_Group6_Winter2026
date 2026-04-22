@@ -232,7 +232,7 @@ const sections: Array<{ title: string; description: string; fields: Field[] }> =
 ]
 
 const fieldClass =
-  'h-10 w-full rounded-lg border border-black/10 bg-white/70 px-3 text-sm text-[var(--color-text-dark)] shadow-sm transition focus:border-[var(--color-accent)] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgba(227,155,99,0.18)] dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10'
+  'h-11 w-full rounded-lg border border-black/10 bg-white/70 px-3.5 text-[15px] text-[var(--color-text-dark)] shadow-sm transition focus:border-[var(--color-accent)] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgba(227,155,99,0.18)] dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10'
 
 // Shows and submits the assessment form.
 export default function AssessmentPage() {
@@ -295,8 +295,8 @@ export default function AssessmentPage() {
 
   // Renders one assessment input field.
   const renderField = (field: Field) => (
-    <label key={field.name} className="block space-y-1">
-      <span className="flex min-h-8 items-end text-[13px] font-semibold leading-4 text-[var(--color-text-dark)]">
+    <label key={field.name} className="block space-y-1.5">
+      <span className="flex min-h-9 items-end text-[15px] font-semibold leading-5 text-[var(--color-text-dark)]">
         {field.label}
       </span>
       {field.type === 'select' ? (
@@ -332,38 +332,38 @@ export default function AssessmentPage() {
   )
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-[96rem] flex-col space-y-4">
-      <section className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-5 shadow-subtle dark:border-white/10">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-[98rem] flex-col space-y-5">
+      <section className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-6 shadow-subtle dark:border-white/10">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-3xl">
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(227,155,99,0.35)] bg-[rgba(227,155,99,0.12)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-accent)]">
-              <ClipboardCheck className="h-4 w-4" />
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[rgba(227,155,99,0.35)] bg-[rgba(227,155,99,0.12)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+              <ClipboardCheck className="h-5 w-5" />
               Assessment
             </div>
-            <h1 className="text-2xl font-semibold leading-tight text-[var(--color-text-dark)] md:text-3xl">
+            <h1 className="text-3xl font-semibold leading-tight text-[var(--color-text-dark)]">
               Social media wellbeing assessment
             </h1>
-            <p className="mt-2 text-sm leading-5 text-[var(--color-text-muted)]">
+            <p className="mt-2 text-base leading-6 text-[var(--color-text-muted)]">
               Estimate your addiction score, dependence level, and personalized recovery plan.
             </p>
           </div>
 
-          <div className="w-full rounded-lg border border-black/10 bg-white/45 p-4 dark:border-white/10 dark:bg-white/5 lg:w-80">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+          <div className="w-full rounded-lg border border-black/10 bg-white/45 p-5 dark:border-white/10 dark:bg-white/5 lg:w-[22rem]">
+            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-accent)]">
               Scale guide
             </p>
-            <p className="mt-1 text-sm leading-5 text-[var(--color-text-muted)]">
+            <p className="mt-2 text-base leading-6 text-[var(--color-text-muted)]">
               Use your best estimate. For scaled questions, 1 is low and 5 is high.
             </p>
           </div>
         </div>
       </section>
 
-      <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_28rem]">
-        <form id="assessment-form" className="space-y-4" onSubmit={handleSubmit}>
+      <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_29rem]">
+        <form id="assessment-form" className="space-y-5" onSubmit={handleSubmit}>
           {error && (
-            <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-              <AlertCircle className="mt-0.5 h-5 w-5 flex-none" />
+            <div className="flex items-start gap-4 rounded-lg border border-red-500/30 bg-red-500/10 p-5 text-base text-red-200">
+              <AlertCircle className="mt-0.5 h-6 w-6 flex-none" />
               <p>{error}</p>
             </div>
           )}
@@ -371,48 +371,48 @@ export default function AssessmentPage() {
           {sections.map((section) => (
             <section
               key={section.title}
-              className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-4 shadow-sm dark:border-white/10"
+              className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-5 shadow-sm dark:border-white/10"
             >
-              <div className="mb-4 flex flex-col gap-1 border-b border-black/10 pb-3 dark:border-white/10">
-                <h2 className="text-lg font-semibold text-[var(--color-text-dark)]">{section.title}</h2>
-                <p className="text-sm text-[var(--color-text-muted)]">{section.description}</p>
+              <div className="mb-4 flex flex-col gap-1.5 border-b border-black/10 pb-3 dark:border-white/10">
+                <h2 className="text-xl font-semibold text-[var(--color-text-dark)]">{section.title}</h2>
+                <p className="text-[15px] leading-6 text-[var(--color-text-muted)]">{section.description}</p>
               </div>
-              <div className="grid gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-x-5 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
                 {section.fields.map(renderField)}
               </div>
             </section>
           ))}
         </form>
 
-        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-          <section className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-5 shadow-subtle dark:border-white/10">
-            <p className="text-sm font-semibold text-[var(--color-text-dark)]">Submit assessment</p>
-            <p className="mt-1 text-sm leading-5 text-[var(--color-text-muted)]">
+        <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
+          <section className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-6 shadow-subtle dark:border-white/10">
+            <p className="text-base font-semibold text-[var(--color-text-dark)]">Submit assessment</p>
+            <p className="mt-2 text-base leading-6 text-[var(--color-text-muted)]">
               Your results and plan will appear here after submission.
             </p>
-            <div className="mt-4 flex gap-3">
-              <Button type="button" variant="outline" onClick={handleReset} className="h-9 flex-1 gap-2 px-3 text-sm">
-                <RotateCcw className="h-3.5 w-3.5" />
+            <div className="mt-5 flex gap-4">
+              <Button type="button" variant="outline" onClick={handleReset} className="h-10 flex-1 gap-2 px-4 text-[15px]">
+                <RotateCcw className="h-4 w-4" />
                 Clear
               </Button>
-              <Button type="submit" form="assessment-form" disabled={submitting} className="h-9 flex-1 gap-2 px-3 text-sm">
-                <Send className="h-3.5 w-3.5" />
+              <Button type="submit" form="assessment-form" disabled={submitting} className="h-10 flex-1 gap-2 px-4 text-[15px]">
+                <Send className="h-4 w-4" />
                 {submitting ? 'Submitting...' : 'Submit'}
               </Button>
             </div>
           </section>
 
           {planSummary && (
-            <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-subtle">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-emerald-500 text-white">
-                  <Sparkles className="h-5 w-5" />
+            <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-7 shadow-subtle">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 flex-none items-center justify-center rounded-lg bg-emerald-500 text-white">
+                  <Sparkles className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-[var(--color-text-dark)]">
+                  <h2 className="text-2xl font-semibold text-[var(--color-text-dark)]">
                     Your plan is ready
                   </h2>
-                  <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+                  <p className="mt-2 text-base leading-7 text-[var(--color-text-muted)]">
                     We made a plan to help you with
                     {planSummary.focusArea ? ` ${planSummary.focusArea}` : ' your top trigger areas'}.
                     {planSummary.actionCount > 0
@@ -421,7 +421,7 @@ export default function AssessmentPage() {
                   </p>
                 </div>
               </div>
-              <Button asChild className="mt-4 h-9 w-full gap-2 px-3 text-sm">
+              <Button asChild className="mt-5 h-12 w-full gap-2 px-4 text-base">
                 <Link href="/app/plan">
                   View my plan
                   <ArrowRight className="h-4 w-4" />
@@ -431,27 +431,27 @@ export default function AssessmentPage() {
           )}
 
           {prediction && (
-            <section className="rounded-xl border border-[rgba(227,155,99,0.35)] bg-[rgba(227,155,99,0.10)] p-5 shadow-subtle">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-accent)] text-white">
-                  <BarChart3 className="h-5 w-5" />
+            <section className="rounded-xl border border-[rgba(227,155,99,0.35)] bg-[rgba(227,155,99,0.10)] p-7 shadow-subtle">
+              <div className="mb-5 flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--color-accent)] text-white">
+                  <BarChart3 className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-[var(--color-text-dark)]">Prediction result</h2>
-                  <p className="text-xs text-[var(--color-text-muted)]">ID: {prediction.assessment_id}</p>
+                  <h2 className="text-2xl font-semibold text-[var(--color-text-dark)]">Prediction result</h2>
+                  <p className="text-sm text-[var(--color-text-muted)]">ID: {prediction.assessment_id}</p>
                 </div>
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid gap-4">
                 {[
                   ['Addiction score', prediction.addiction_score],
                   ['Addiction risk', prediction.addiction_risk_level],
                   ['Dependence class', prediction.predicted_class],
                   ['Dependence risk', prediction.dependence_risk_level],
                 ].map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between rounded-lg border border-black/10 bg-white/55 p-4 dark:border-white/10 dark:bg-white/5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
-                    <p className="text-xl font-semibold text-[var(--color-text-dark)]">{value}</p>
+                  <div key={label} className="flex items-center justify-between rounded-lg border border-black/10 bg-white/55 p-5 dark:border-white/10 dark:bg-white/5">
+                    <p className="text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
+                    <p className="text-2xl font-semibold text-[var(--color-text-dark)]">{value}</p>
                   </div>
                 ))}
               </div>

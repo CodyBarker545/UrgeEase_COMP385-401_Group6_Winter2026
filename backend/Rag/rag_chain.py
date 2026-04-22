@@ -96,6 +96,7 @@ ASSISTANT_BEHAVIOR_CONTRACT = """Assistant behavior:
 
 
 MAX_LOCAL_RESPONSE_SENTENCES = 4
+VECTORSTORE_METADATA_VERSION = "metadata-v2"
 
 
 # Infers the content category from a source path.
@@ -245,6 +246,7 @@ class RAGConfig:
 def _compute_dir_hash(data_dir: str) -> str:
     # hash all txt files recursively
     md5 = hashlib.md5()
+    md5.update(VECTORSTORE_METADATA_VERSION.encode("utf-8"))
 
     txt_files: List[str] = []
     for root, _, files in os.walk(data_dir):
@@ -406,6 +408,66 @@ def _prompt_categories(prompt: str) -> list[str]:
     return [category for category in categories if not (category in seen or seen.add(category))]
 
 
+# Extracts the current user message from a larger RAG query.
+def _direct_user_query(question: str) -> str:
+    return question.split("\n\nAssessment context:", 1)[0].strip()
+
+
+# Checks if the user is asking what the assistant is.
+def _is_identity_question(message: str) -> bool:
+    cleaned = re.sub(r"[^a-z0-9\s]", "", message.lower()).strip()
+    if "who are you" in cleaned or "what are you" in cleaned:
+        return True
+    identity_questions = {
+        "who are you",
+        "what are you",
+        "who is this",
+        "what is this",
+    }
+    return cleaned in identity_questions
+
+
+# Pulls short useful lines out of retrieved context.
+def _context_sentences(prompt: str, categories: list[str]) -> list[str]:
+    context_match = re.search(r"(?ms)^<context>\s*(.*?)^</context>", prompt)
+    if not context_match:
+        return []
+
+    preferred = set(categories)
+    blocks = re.split(r"\n(?=\[SOURCE:)", context_match.group(1).strip())
+    sentences: list[str] = []
+
+    for block in blocks:
+        category_match = re.search(r"\[CATEGORY:\s*([^\]]+)\]", block)
+        category = category_match.group(1).strip() if category_match else "general"
+        if preferred and category not in preferred:
+            continue
+
+        text = re.sub(r"\[[^\]]+\]", " ", block)
+        for sentence in re.findall(r"[^.!?]+[.!?]+|[^.!?]+$", text):
+            sentence = re.sub(r"\s+", " ", sentence).strip()
+            if len(sentence) >= 35:
+                sentences.append(sentence)
+            if len(sentences) >= 3:
+                return sentences
+
+    return sentences
+
+
+# Makes a short plain-language action from retrieved guidance.
+def _action_from_context(sentence: str) -> str:
+    lowered = sentence.lower()
+    if "sleep" in lowered or "bed" in lowered or "night" in lowered:
+        return "For tonight, keep the phone away from the bed and make the last 30 minutes before sleep a quiet wind-down block."
+    if "study" in lowered or "focus" in lowered or "work" in lowered:
+        return "Try one short phone-free focus block, then check your phone only after the block ends."
+    if "comparison" in lowered or "likes" in lowered or "validation" in lowered:
+        return "Treat likes and comparison as a trigger, then take a short break before checking again."
+    if "urge" in lowered or "craving" in lowered:
+        return "When the urge hits, delay for 10 minutes and switch to one small replacement action."
+    return sentence
+
+
 # Creates a local rule-based chat response.
 def local_chat_llm(prompt: str) -> str:
     """
@@ -418,13 +480,34 @@ def local_chat_llm(prompt: str) -> str:
     """
     user_message = _prompt_user_message(prompt)
 
-    # The local generator uses retrieved categories instead of open-ended generation.
-    categories = _prompt_categories(prompt) or detect_query_categories(user_message)
+    if _is_identity_question(user_message):
+        return (
+            "I'm UrgeEase, a support assistant for understanding urges and building healthier digital habits. "
+            "I can help you reflect on patterns, use your recovery plan, and choose one practical next step."
+        )
+
+    # Use the user's current message first, then retrieved categories as backup.
+    detected_categories = detect_query_categories(user_message)
+    retrieved_categories = _prompt_categories(prompt)
+    categories = list(dict.fromkeys(detected_categories + retrieved_categories))
     primary_category = categories[0] if categories else "general"
 
     opener = "I hear you, and we can keep this small enough to do right now."
-    if user_message and "assessment context" not in user_message.lower() and len(user_message) <= 90:
-        opener = f"I hear you. {user_message}"
+    if user_message:
+        if primary_category == "sleep_and_routine":
+            opener = "Trouble sleeping can make urges feel stronger, so keep the next step simple."
+        elif primary_category == "habit_tracking":
+            opener = "That automatic checking loop can be hard to catch, but one small pause helps."
+        elif primary_category == "social_media_addiction_research":
+            opener = "Comparison and validation checks can pull hard, so it helps to treat them as a trigger."
+        elif primary_category == "coping_strategies":
+            opener = "That sounds heavy, so start with something that steadies your body first."
+
+    context_categories = detected_categories or categories
+    context_actions = [
+        _action_from_context(sentence)
+        for sentence in _context_sentences(prompt, context_categories)
+    ]
 
     category_steps = {
         "sleep_and_routine": (
@@ -456,6 +539,9 @@ def local_chat_llm(prompt: str) -> str:
             "When it appears, delay for 10 minutes and choose one small replacement action."
         ),
     }
+
+    if context_actions:
+        return limit_sentences(f"{opener} {context_actions[0]}")
 
     return limit_sentences(
         f"{opener} {category_steps.get(primary_category, category_steps['general'])}"
@@ -533,8 +619,10 @@ class UrgeEaseRAGChain:
         question: str,
         chat_history: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
+        user_query = _direct_user_query(question)
+
         # stop and return crisis help if needed
-        if is_crisis(question):
+        if is_crisis(user_query):
             return {
                 "result": CRISIS_MESSAGE,
                 "source_documents": [],
@@ -544,14 +632,14 @@ class UrgeEaseRAGChain:
         chat_history = chat_history or []
         history_str = format_history(chat_history)
 
-        retrieval_query = expand_query(question)
+        retrieval_query = expand_query(user_query)
         docs = self.retriever.invoke(retrieval_query)
         context = "\n\n".join(
             [
                 (
                     f"[SOURCE: {d.metadata.get('source', 'unknown')}]"
-                    f"[CATEGORY: {d.metadata.get('category', 'general')}]"
-                    f"[STRATEGY: {d.metadata.get('strategy_type', 'psychoeducation')}]\n"
+                    f"[CATEGORY: {d.metadata.get('category') or 'general'}]"
+                    f"[STRATEGY: {d.metadata.get('strategy_type') or 'psychoeducation'}]\n"
                     f"{d.page_content}"
                 )
                 for d in docs

@@ -135,6 +135,32 @@ def test_local_chat_llm_stays_short_and_plain():
     assert "focus.txt" not in response
 
 
+def test_local_chat_llm_answers_identity_questions():
+    prompt = build_prompt(
+        chat_history="",
+        context="[SOURCE: guide.txt][CATEGORY: general]\nUrgeEase supports recovery planning.",
+        query="hello who are you",
+    )
+
+    response = local_chat_llm(prompt)
+
+    assert "UrgeEase" in response
+    assert "time, mood, place, or device" not in response
+
+
+def test_local_chat_llm_uses_sleep_context():
+    prompt = build_prompt(
+        chat_history="",
+        context="[SOURCE: sleep.txt][CATEGORY: sleep_and_routine]\nSleep plan: keep the phone away from bed and use a bedtime wind-down routine.",
+        query="I have trouble sleeping at night",
+    )
+
+    response = local_chat_llm(prompt)
+
+    assert "phone away from the bed" in response
+    assert "time, mood, place, or device" not in response
+
+
 def test_rag_routes_trigger_questions_to_relevant_categories(rag_scratch_dir: Path):
     data_dir = rag_scratch_dir / "data"
     index_dir = rag_scratch_dir / "vectorstore"

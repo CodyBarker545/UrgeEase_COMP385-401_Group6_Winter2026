@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
+import certifi
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.database import Database
@@ -16,7 +17,14 @@ def get_client() -> MongoClient:
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
         raise ValueError("MONGO_URI is not set in the environment")
-    return MongoClient(mongo_uri)
+    timeout_ms = int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000"))
+    return MongoClient(
+        mongo_uri,
+        tlsCAFile=certifi.where(),
+        connectTimeoutMS=timeout_ms,
+        socketTimeoutMS=timeout_ms,
+        serverSelectionTimeoutMS=timeout_ms,
+    )
 
 
 # Returns the MongoDB database for the app.
