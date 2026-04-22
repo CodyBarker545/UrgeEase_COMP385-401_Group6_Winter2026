@@ -11,6 +11,9 @@ yarn-error.log*
 __pycache__/
 *.pyc
 .pytest_cache/
+.pytest-tmp-run/
+tmp-pytest/
+.rag-test-workspace/
 .mypy_cache/
 .pytype/
 .pyright/

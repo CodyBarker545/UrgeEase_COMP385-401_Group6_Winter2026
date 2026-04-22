@@ -12,6 +12,7 @@ import type {
   SendMessageRequest,
   AuthResponse,
   RecoveryPlan,
+  ResultsAnalytics,
 } from './types'
 
 const AUTH_STORAGE_KEY = 'urgeease-auth'
@@ -48,8 +49,9 @@ type BackendResult = {
   userId?: string | null
   sessionId?: string | null
   generatedAt?: string | null
+  resultType?: 'addiction' | 'dependence' | 'unknown'
   addictionScore?: number | null
-  predictedClass?: string | null
+  predictedClass?: number | null
   riskLevel?: string | number | null
   topTriggers?: string[]
   recommendations?: string[]
@@ -379,10 +381,11 @@ export async function getResults(): Promise<ResultsSummary> {
     return { sessionsCompleted: 0, addictions: [], unlocked: false }
   }
 
-  const [sessions, latestResult, activePlan] = await Promise.all([
+  const [sessions, latestResult, activePlan, analytics] = await Promise.all([
     getSessions(),
     apiRequest<BackendResult>(`/api/results/latest/${userId}`).catch(() => null),
     getActivePlan(),
+    apiRequest<ResultsAnalytics>(`/api/results/analytics/${userId}`).catch(() => null),
   ])
 
   const sessionsCompleted = sessions.filter((session) => session.messageCount > 0).length
@@ -392,6 +395,7 @@ export async function getResults(): Promise<ResultsSummary> {
       addictions: [],
       unlocked: false,
       activePlan,
+      analytics,
     }
   }
 
@@ -399,6 +403,7 @@ export async function getResults(): Promise<ResultsSummary> {
     sessionsCompleted,
     unlocked: true,
     activePlan,
+    analytics,
     addictions: [
       {
         id: latestResult.resultId,

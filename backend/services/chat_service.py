@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+import os
 import random
+import re
 from datetime import datetime
 from typing import Any
 
+from Rag.rag_chain import limit_sentences
 from services.llm_service import get_llm_service
 from services.message_service import MessageService
 from services.plan_service import PlanService
@@ -18,6 +22,40 @@ class ChatService:
         self.plan_service = PlanService()
         self.result_service = ResultService()
         self.session_service = SessionService()
+
+    @staticmethod
+    def _llm_timeout_seconds() -> float:
+        try:
+            return float(os.getenv("CHAT_LLM_TIMEOUT_SECONDS", "8"))
+        except ValueError:
+            return 8.0
+
+    @classmethod
+    def _generate_reply_with_timeout(
+        cls,
+        question: str,
+        history: list[dict[str, str]],
+    ) -> dict[str, Any]:
+        timeout_seconds = cls._llm_timeout_seconds()
+
+        # Keep the UI responsive if a future hosted model is enabled.
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(
+            get_llm_service().generate_reply,
+            question=question,
+            chat_history=history,
+        )
+        try:
+            return future.result(timeout=timeout_seconds)
+        except TimeoutError as exc:
+            future.cancel()
+            executor.shutdown(wait=False, cancel_futures=True)
+            raise TimeoutError(
+                f"LLM response timed out after {timeout_seconds:g} seconds"
+            ) from exc
+        finally:
+            if future.done():
+                executor.shutdown(wait=False)
 
     @staticmethod
     def _format_results_context(
@@ -96,7 +134,7 @@ class ChatService:
     ) -> tuple[list[dict[str, Any]], str]:
         # get results and fallback to session user if needed
         normalized_user_id = str(user_id).strip()
-        previous_results = self.result_service.get_user_results(normalized_user_id)
+        previous_results = self.result_service.get_user_results(normalized_user_id, result_type="addiction")
         if previous_results:
             return previous_results, normalized_user_id
 
@@ -104,7 +142,7 @@ class ChatService:
         session_user_id = session.get("userId") if session else None
 
         if session_user_id and session_user_id != normalized_user_id:
-            fallback_results = self.result_service.get_user_results(session_user_id)
+            fallback_results = self.result_service.get_user_results(session_user_id, result_type="addiction")
             if fallback_results:
                 return fallback_results, session_user_id
 
@@ -302,6 +340,45 @@ class ChatService:
         ]
         return any(term in lowered for term in crisis_terms)
 
+    @staticmethod
+    def _polish_assistant_response(response: str) -> str:
+        if not response:
+            return response
+
+        # Remove model-style sections so chat reads like one natural message.
+        text = response.strip()
+        text = re.sub(
+            r"(?ims)^\s*(?:#+\s*)?(?:3\s*[\).:-]\s*)?sources?\s+used\s*:?.*$",
+            "",
+            text,
+        ).strip()
+        text = re.sub(
+            r"(?im)^\s*(?:#+\s*)?(?:1\s*[\).:-]\s*)?supportive response\s*:?\s*",
+            "",
+            text,
+        )
+        text = re.sub(
+            r"(?im)^\s*(?:#+\s*)?(?:2\s*[\).:-]\s*)?practical next steps\s*:?\s*",
+            "",
+            text,
+        )
+        text = re.sub(
+            r"(?im)^\s*(?:#+\s*)?retrieved guidance\s*:.*$",
+            "",
+            text,
+        )
+
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        cleaned_lines: list[str] = []
+        for line in lines:
+            line = re.sub(r"^\s*(?:[-*]|\d+\s*[\).])\s*", "", line).strip()
+            if line:
+                cleaned_lines.append(line)
+
+        polished = " ".join(cleaned_lines)
+        polished = re.sub(r"\s+", " ", polished).strip()
+        return limit_sentences(polished or response.strip())
+
     @classmethod
     def _build_demo_fallback_response(
         cls,
@@ -388,6 +465,7 @@ class ChatService:
 
         latest_result = previous_results[0] if previous_results else None
 
+        # Combine assessment, progress, plan, and chat history into one RAG query.
         results_context = self._format_results_context(latest_result, previous_results)
         progress_summary = self._build_progress_summary(latest_result, previous_results)
         focus_areas = self._extract_focus_areas(latest_result)
@@ -432,14 +510,13 @@ class ChatService:
             )
 
         try:
-            # run rag + gemini
-            rag_out = get_llm_service().generate_reply(
-                question=question,
-                chat_history=history,
-            )
+            # Run local RAG by default. Gemini can be enabled later with
+            # CHAT_LLM_PROVIDER=gemini for richer hosted generation.
+            rag_out = self._generate_reply_with_timeout(question, history)
+            assistant_response = self._polish_assistant_response(rag_out["result"])
 
             return {
-                "assistantResponse": rag_out["result"],
+                "assistantResponse": assistant_response,
                 "crisis": rag_out["crisis"],
                 "sources": sorted(
                     {

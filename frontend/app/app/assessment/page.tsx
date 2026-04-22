@@ -1,341 +1,459 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useAuthStore } from '@/frontend/lib/store'
+import type { ChangeEvent, FormEvent } from 'react'
+import { useState } from 'react'
+import { AlertCircle, ArrowRight, BarChart3, ClipboardCheck, RotateCcw, Send, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 import { submitAssessment } from '@/frontend/lib/api'
+import { useAuthStore } from '@/frontend/lib/store'
+import { Button } from '@/frontend/components/ui/button'
+
+const initialForm = {
+  Age: '',
+  Gender: '',
+  Relationship_Status: '',
+  Occupation_Status: '',
+  Mindless_Use: '',
+  Distraction_When_Busy: '',
+  Restless_Without_SM: '',
+  Distractibility_Score: '',
+  Worry_Score: '',
+  Concentration_Difficulty: '',
+  Social_Comparison: '',
+  Validation_Seeking: '',
+  Depression_Frequency: '',
+  Interest_Fluctuation: '',
+  Sleep_Issues: '',
+  Daily_Usage_Hours: '',
+  Platform_Count: '',
+  Avg_Daily_Usage_Hours: '',
+  Affects_Academic_Performance: '',
+  Sleep_Hours_Per_Night: '',
+  Mental_Health_Score: '',
+  Conflicts_Over_Social_Media: '',
+}
+
+type FormState = typeof initialForm
+type FieldName = keyof FormState
+
+type Prediction = {
+  dependence_risk_level: string
+  predicted_class: number
+  addiction_risk_level: string
+  addiction_score: number
+  assessment_id: string
+}
+
+type PlanSummary = {
+  focusArea: string | null
+  actionCount: number
+}
+
+type SelectField = {
+  type: 'select'
+  name: FieldName
+  label: string
+  placeholder: string
+  options: Array<{ label: string; value: string }>
+}
+
+type NumberField = {
+  type: 'number'
+  name: FieldName
+  label: string
+  placeholder?: string
+  min?: number
+  max?: number
+  step?: number
+}
+
+type Field = SelectField | NumberField
+
+const frequencyOptions = [
+  { label: 'Never', value: '1' },
+  { label: 'Rarely', value: '2' },
+  { label: 'Sometimes', value: '3' },
+  { label: 'Often', value: '4' },
+  { label: 'Always', value: '5' },
+]
+
+const usageOptions = [
+  { label: 'Less than 1 hour', value: '0.5' },
+  { label: '1-2 hours', value: '1.5' },
+  { label: '2-3 hours', value: '2.5' },
+  { label: '3-4 hours', value: '3.5' },
+  { label: '4-5 hours', value: '4.5' },
+  { label: '5+ hours', value: '6.0' },
+]
+
+const sections: Array<{ title: string; description: string; fields: Field[] }> = [
+  {
+    title: 'Profile',
+    description: 'Basic details help calibrate the assessment context.',
+    fields: [
+      { type: 'number', name: 'Age', label: 'Age', min: 1, placeholder: '18' },
+      {
+        type: 'select',
+        name: 'Gender',
+        label: 'Gender',
+        placeholder: 'Select gender',
+        options: [
+          { label: 'Male', value: 'Male' },
+          { label: 'Female', value: 'Female' },
+          { label: 'Non-binary', value: 'Non-Binary' },
+          { label: 'Prefer not to say', value: 'Prefer not to say' },
+        ],
+      },
+      {
+        type: 'select',
+        name: 'Relationship_Status',
+        label: 'Relationship status',
+        placeholder: 'Select status',
+        options: [
+          { label: 'Single', value: 'Single' },
+          { label: 'Married', value: 'Married' },
+          { label: 'In a relationship', value: 'In a Relationship' },
+          { label: 'Complicated', value: 'Complicated' },
+        ],
+      },
+      {
+        type: 'select',
+        name: 'Occupation_Status',
+        label: 'Occupation status',
+        placeholder: 'Select occupation',
+        options: [
+          { label: 'Student', value: 'Student' },
+          { label: 'Working', value: 'Working' },
+          { label: 'Retired', value: 'Retired' },
+        ],
+      },
+    ],
+  },
+  {
+    title: 'Social Media Behavior',
+    description: 'Reflect on how social media shows up during your day.',
+    fields: [
+      {
+        type: 'select',
+        name: 'Mindless_Use',
+        label: 'Using social media without a specific purpose',
+        placeholder: 'Choose frequency',
+        options: frequencyOptions,
+      },
+      {
+        type: 'select',
+        name: 'Distraction_When_Busy',
+        label: 'Getting distracted by social media while busy',
+        placeholder: 'Choose frequency',
+        options: frequencyOptions,
+      },
+      {
+        type: 'select',
+        name: 'Restless_Without_SM',
+        label: "Feeling restless when you haven't used social media",
+        placeholder: 'Choose frequency',
+        options: frequencyOptions,
+      },
+      {
+        type: 'select',
+        name: 'Concentration_Difficulty',
+        label: 'Difficulty concentrating on tasks',
+        placeholder: 'Choose frequency',
+        options: frequencyOptions,
+      },
+      {
+        type: 'select',
+        name: 'Validation_Seeking',
+        label: 'Seeking validation through social media features',
+        placeholder: 'Choose frequency',
+        options: frequencyOptions,
+      },
+      {
+        type: 'number',
+        name: 'Social_Comparison',
+        label: 'Comparing yourself to successful people online',
+        min: 1,
+        max: 5,
+        placeholder: '1-5',
+      },
+      {
+        type: 'number',
+        name: 'Conflicts_Over_Social_Media',
+        label: 'Conflicts related to social media usage',
+        min: 1,
+        max: 5,
+        placeholder: '1-5',
+      },
+    ],
+  },
+  {
+    title: 'Wellbeing',
+    description: 'Rate focus, sleep, mood, and general mental health.',
+    fields: [
+      { type: 'number', name: 'Distractibility_Score', label: 'Ease of distraction', min: 1, max: 5, placeholder: '1-5' },
+      { type: 'number', name: 'Worry_Score', label: 'How much worries bother you', min: 1, max: 5, placeholder: '1-5' },
+      {
+        type: 'select',
+        name: 'Depression_Frequency',
+        label: 'Feeling depressed or down',
+        placeholder: 'Choose frequency',
+        options: frequencyOptions,
+      },
+      { type: 'number', name: 'Interest_Fluctuation', label: 'Interest in daily activities fluctuates', min: 1, max: 5, placeholder: '1-5' },
+      { type: 'number', name: 'Sleep_Issues', label: 'Issues regarding sleep', min: 1, max: 5, placeholder: '1-5' },
+      { type: 'number', name: 'Sleep_Hours_Per_Night', label: 'Hours of sleep per night', min: 1, step: 0.5, placeholder: '7' },
+      { type: 'number', name: 'Mental_Health_Score', label: 'Overall mental health rating', min: 1, max: 10, placeholder: '1-10' },
+    ],
+  },
+  {
+    title: 'Usage Pattern',
+    description: 'Estimate your daily usage and platform habits.',
+    fields: [
+      {
+        type: 'select',
+        name: 'Daily_Usage_Hours',
+        label: 'Time spent on social media each day',
+        placeholder: 'Select time range',
+        options: usageOptions,
+      },
+      { type: 'number', name: 'Platform_Count', label: 'Social media platforms commonly used', min: 0, placeholder: '3' },
+      {
+        type: 'select',
+        name: 'Affects_Academic_Performance',
+        label: 'Social media affects academic performance',
+        placeholder: 'Select an answer',
+        options: [
+          { label: 'Yes', value: 'Yes' },
+          { label: 'No', value: 'No' },
+        ],
+      },
+    ],
+  },
+]
+
+const fieldClass =
+  'h-10 w-full rounded-lg border border-black/10 bg-white/70 px-3 text-sm text-[var(--color-text-dark)] shadow-sm transition focus:border-[var(--color-accent)] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgba(227,155,99,0.18)] dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10'
 
 export default function AssessmentPage() {
-    const user = useAuthStore((state) => state.user)
-    const [form, setForm] = useState({
-        Age: "",
-        Gender: "",
-        Relationship_Status: "",
-        Occupation_Status: "",
-        Mindless_Use: "",
-        Distraction_When_Busy: "",
-        Restless_Without_SM: "",
-        Distractibility_Score: "",
-        Worry_Score: "",
-        Concentration_Difficulty: "",
-        Social_Comparison: "",
-        Validation_Seeking: "",
-        Depression_Frequency: "",
-        Interest_Fluctuation: "",
-        Sleep_Issues: "",
-        Daily_Usage_Hours: "",
-        Platform_Count: "",
-        Avg_Daily_Usage_Hours: "",
-        Affects_Academic_Performance: "",
-        Sleep_Hours_Per_Night: "",
-        Mental_Health_Score: "",
-        Conflicts_Over_Social_Media: ""
+  const user = useAuthStore((state) => state.user)
+  const [form, setForm] = useState<FormState>(initialForm)
+  const [prediction, setPrediction] = useState<Prediction | null>(null)
+  const [planSummary, setPlanSummary] = useState<PlanSummary | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-    })
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'Daily_Usage_Hours' ? { Avg_Daily_Usage_Hours: value } : {}),
+    }))
+  }
 
-    type Prediction = {
-        dependence_risk_level: string;
-        predicted_class: number;
-        addiction_risk_level: string;
-        addiction_score: number;
-        assessment_id: string;
-    }
-    const [prediction, setPrediction] = useState<Prediction | null>(null);
-    const [submitting, setSubmitting] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
+    if (!user?.id) {
+      setError('A signed-in user is required to submit the assessment.')
+      return
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        if (!user?.id) {
-            setError('A signed-in user is required to submit the assessment.')
-            return
-        }
-
-        try {
-            setSubmitting(true)
-            setError(null)
-            const assessment = await submitAssessment(form)
-            setPrediction({
-                dependence_risk_level: assessment.dependenceResult.risk_level,
-                predicted_class: assessment.dependenceResult.predicted_class,
-                addiction_risk_level: assessment.addictionResult.risk_level,
-                addiction_score: assessment.addictionResult.addiction_score,
-                assessment_id: assessment.assessmentId,
-            })
-
-        } catch (error) {
-            console.error(error);
-            setError(error instanceof Error ? error.message : 'Failed to submit assessment.')
-        } finally {
-            setSubmitting(false)
-        }
+    try {
+      setSubmitting(true)
+      setError(null)
+      const assessment = await submitAssessment(form)
+      setPrediction({
+        dependence_risk_level: assessment.dependenceResult.risk_level,
+        predicted_class: assessment.dependenceResult.predicted_class,
+        addiction_risk_level: assessment.addictionResult.risk_level,
+        addiction_score: assessment.addictionResult.addiction_score,
+        assessment_id: assessment.assessmentId,
+      })
+      setPlanSummary({
+        focusArea: assessment.plan.focusArea,
+        actionCount: assessment.plan.actions.length,
+      })
+    } catch (error) {
+      console.error(error)
+      setError(error instanceof Error ? error.message : 'Failed to submit assessment.')
+    } finally {
+      setSubmitting(false)
     }
+  }
 
-    const handleReset = () => {
-        setForm({
-            Age: "",
-            Gender: "",
-            Relationship_Status: "",
-            Occupation_Status: "",
-            Mindless_Use: "",
-            Distraction_When_Busy: "",
-            Restless_Without_SM: "",
-            Distractibility_Score: "",
-            Worry_Score: "",
-            Concentration_Difficulty: "",
-            Social_Comparison: "",
-            Validation_Seeking: "",
-            Depression_Frequency: "",
-            Interest_Fluctuation: "",
-            Sleep_Issues: "",
-            Daily_Usage_Hours: "",
-            Platform_Count: "",
-            Avg_Daily_Usage_Hours: "",
-            Affects_Academic_Performance: "",
-            Sleep_Hours_Per_Night: "",
-            Mental_Health_Score: "",
-            Conflicts_Over_Social_Media: ""
-        })
-        setPrediction(null)
-        setError(null)
-    }
+  const handleReset = () => {
+    setForm(initialForm)
+    setPrediction(null)
+    setPlanSummary(null)
+    setError(null)
+  }
 
-    return (
-        <div className="mx-auto max-w-4xl space-y-6">
-            <div>
-                <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text-dark)', fontFamily: 'var(--font-primary)' }}>
-                    Assessment
-                </h1>
-                <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                    Take the assessment to get your addiction score and dependence level
-                </p>
+  const renderField = (field: Field) => (
+    <label key={field.name} className="block space-y-1">
+      <span className="flex min-h-8 items-end text-[13px] font-semibold leading-4 text-[var(--color-text-dark)]">
+        {field.label}
+      </span>
+      {field.type === 'select' ? (
+        <select
+          className={fieldClass}
+          name={field.name}
+          value={form[field.name]}
+          onChange={handleChange}
+          required
+        >
+          <option value="">{field.placeholder}</option>
+          {field.options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          className={fieldClass}
+          type="number"
+          name={field.name}
+          value={form[field.name]}
+          onChange={handleChange}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          placeholder={field.placeholder}
+          required
+        />
+      )}
+    </label>
+  )
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-[96rem] flex-col space-y-4">
+      <section className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-5 shadow-subtle dark:border-white/10">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgba(227,155,99,0.35)] bg-[rgba(227,155,99,0.12)] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+              <ClipboardCheck className="h-4 w-4" />
+              Assessment
             </div>
-            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12"
-                style={{
-                    borderColor: 'rgba(227, 155, 99, 0.3)',
-                    backgroundColor: 'var(--color-card-bg)'
-                }}>
-                <form className='mx-auto max-w-4xl space-y-6' onSubmit={handleSubmit}>
-                    {error && (
-                        <div
-                            className="rounded-lg border px-4 py-3 text-sm"
-                            style={{
-                                borderColor: 'rgba(220, 38, 38, 0.4)',
-                                backgroundColor: 'rgba(220, 38, 38, 0.08)',
-                                color: '#fca5a5'
-                            }}
-                        >
-                            {error}
-                        </div>
-                    )}
+            <h1 className="text-2xl font-semibold leading-tight text-[var(--color-text-dark)] md:text-3xl">
+              Social media wellbeing assessment
+            </h1>
+            <p className="mt-2 text-sm leading-5 text-[var(--color-text-muted)]">
+              Estimate your addiction score, dependence level, and personalized recovery plan.
+            </p>
+          </div>
 
-                    <div>
-                        <label>Age: </label>
-                        <input type="number" name='Age' value={form.Age} onChange={handleChange} min={1} required style={{ width: '50px' }} />
-                    </div>
-                    <div>
-                        <label>Gender: </label>
-                        <select name='Gender' value={form.Gender} onChange={handleChange} required>
-                            <option></option>
-                            <option>Male</option>
-                            <option>Female</option>
-                            <option>Non-Binary</option>
-                            <option>Prefer not to say</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Relationship status: </label>
-                        <select name='Relationship_Status' value={form.Relationship_Status} onChange={handleChange} required>
-                            <option></option>
-                            <option>Single</option>
-                            <option>Married</option>
-                            <option>In a Relationship</option>
-                            <option>Complicated</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Occupation status: </label>
-                        <select name='Occupation_Status' value={form.Occupation_Status} onChange={handleChange} required>
-                            <option></option>
-                            <option>Student</option>
-                            <option>Working</option>
-                            <option>Retired</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>How often do you find yourself using Social media without a specific purpose? </label>
-                        <select name='Mindless_Use' value={form.Mindless_Use} onChange={handleChange} required>
-                            <option></option>
-                            <option value={1}>Never</option>
-                            <option value={2}>Rarely</option>
-                            <option value={3}>Sometimes</option>
-                            <option value={4}>Often</option>
-                            <option value={5}>Always</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>How often do you get distracted by Social media when you are busy doing something? </label>
-                        <select name='Distraction_When_Busy' value={form.Distraction_When_Busy} onChange={handleChange} required>
-                            <option></option>
-                            <option value={1}>Never</option>
-                            <option value={2}>Rarely</option>
-                            <option value={3}>Sometimes</option>
-                            <option value={4}>Often</option>
-                            <option value={5}>Always</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>How often do you feel restless if you haven't used Social media in a while? </label>
-                        <select name='Restless_Without_SM' value={form.Restless_Without_SM} onChange={handleChange} required>
-                            <option></option>
-                            <option value={1}>Never</option>
-                            <option value={2}>Rarely</option>
-                            <option value={3}>Sometimes</option>
-                            <option value={4}>Often</option>
-                            <option value={5}>Always</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>On a scale of 1 to 5, how easily distracted are you? </label>
-                        <input type="number" name='Distractibility_Score' value={form.Distractibility_Score} onChange={handleChange} min={1} max={5} required />
-                    </div>
-                    <div>
-                        <label>On a scale of 1 to 5, how much are you bothered by worries? </label>
-                        <input type="number" name='Worry_Score' value={form.Worry_Score} onChange={handleChange} min={1} max={5} required />
-                    </div>
-                    <div>
-                        <label>How often do you find it difficult to concentrate on things? </label>
-                        <select name='Concentration_Difficulty' value={form.Concentration_Difficulty} onChange={handleChange} required>
-                            <option></option>
-                            <option value={1}>Never</option>
-                            <option value={2}>Rarely</option>
-                            <option value={3}>Sometimes</option>
-                            <option value={4}>Often</option>
-                            <option value={5}>Always</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>On a scale of 1-5, how often do you compare yourself to other successful people through the use of social media? </label>
-                        <input type="number" name='Social_Comparison' value={form.Social_Comparison} onChange={handleChange} min={1} max={5} required />
-                    </div>
-                    <div>
-                        <label>How often do you look to seek validation from features of social media? </label>
-                        <select name='Validation_Seeking' value={form.Validation_Seeking} onChange={handleChange} required>
-                            <option></option>
-                            <option value={1}>Never</option>
-                            <option value={2}>Rarely</option>
-                            <option value={3}>Sometimes</option>
-                            <option value={4}>Often</option>
-                            <option value={5}>Always</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>How often do you feel depressed or down? </label>
-                        <select name='Depression_Frequency' value={form.Depression_Frequency} onChange={handleChange} required>
-                            <option></option>
-                            <option value={1}>Never</option>
-                            <option value={2}>Rarely</option>
-                            <option value={3}>Sometimes</option>
-                            <option value={4}>Often</option>
-                            <option value={5}>Always</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>On a scale of 1 to 5, how frequently does your interest in daily activities fluctuate? </label>
-                        <input type="number" name='Interest_Fluctuation' value={form.Interest_Fluctuation} onChange={handleChange} min={1} max={5} required />
-                    </div>
-                    <div>
-                        <label>On a scale of 1 to 5, how often do you face issues regarding sleep? </label>
-                        <input type="number" name='Sleep_Issues' value={form.Sleep_Issues} onChange={handleChange} min={1} max={5} required />
-                    </div>
-                    <div>
-                        <label>How much time do you spend on social media every day? </label>
-                        <select name='Daily_Usage_Hours' value={form.Daily_Usage_Hours} onChange={handleChange} required>
-                            <option></option>
-                            <option value={0.5}>Less than 1 hour</option>
-                            <option value={1.5}>1-2 hours</option>
-                            <option value={2.5}>2-3 hours</option>
-                            <option value={3.5}>3-4 hours</option>
-                            <option value={4.5}>4-5 hours</option>
-                            <option value={6.0}>5+ hours</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>How many social media platforms do you commonly use? </label>
-                        <input type="number" name='Platform_Count' value={form.Platform_Count} onChange={handleChange} required min={0} style={{ width: '50px' }} />
-                    </div>
-                    <div>
-                        <label>How many hours of sleep per night do you get? </label>
-                        <input type="number" name='Sleep_Hours_Per_Night' value={form.Sleep_Hours_Per_Night} onChange={handleChange} min={1} required style={{ width: '50px' }} />
-                    </div>
-                    <div>
-                        <label>On a scale of 1-10, rate your overall mental health </label>
-                        <input type="number" name='Mental_Health_Score' value={form.Mental_Health_Score} onChange={handleChange} min={1} max={10} required style={{ width: '50px' }} />
-                    </div>
-                    <div>
-                        <label> What is the average time you spend on social media every day? </label>
-                        <select name='Avg_Daily_Usage_Hours' value={form.Avg_Daily_Usage_Hours} onChange={handleChange} required>
-                            <option></option>
-                            <option value={0.5}>Less than 1 hour</option>
-                            <option value={1.5}>1-2 hours</option>
-                            <option value={2.5}>2-3 hours</option>
-                            <option value={3.5}>3-4 hours</option>
-                            <option value={4.5}>4-5 hours</option>
-                            <option value={6.0}>5+ hours</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Do you think your social media use has an effect on academic performance? </label>
-                        <select name='Affects_Academic_Performance' value={form.Affects_Academic_Performance} onChange={handleChange} required>
-                            <option></option>
-                            <option>Yes</option>
-                            <option>No</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>On a scale of 1-5, rate how much you get into conflicts regarding social media usage </label>
-                        <input type="number" name='Conflicts_Over_Social_Media' value={form.Conflicts_Over_Social_Media} onChange={handleChange} min={1} max={5} required style={{ width: '50px' }} />
-                    </div>
-                    <div>
-                        <button className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all"
-                            style={{
-                                backgroundColor: 'var(--color-accent)',
-                                color: 'var(--color-text-light)',
-                            }} type='submit' disabled={submitting}>
-                            {submitting ? 'Submitting...' : 'Submit'}
-                        </button>
-
-                        <button className="gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all"
-                            style={{
-                                backgroundColor: 'var(--color-accent)',
-                                color: 'var(--color-text-light)',
-                                marginLeft: '10px'
-                            }} type='reset' onClick={handleReset}>Clear</button>
-                    </div>
-                </form>
-                {prediction && (
-                    <div>
-                        <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text-dark)', fontFamily: 'var(--font-primary)', marginBottom: '20px', textAlign: 'center' }}>Prediction Result</h1>
-                        <div style={{
-                            display: 'grid',
-                            gap: '10px',
-                        }}>
-                            <p><b>Assessment ID:</b> {prediction.assessment_id}</p>
-                            <p><b>Addiction Score:</b> {prediction.addiction_score}</p>
-                            <p><b>Addiction Risk:</b> {prediction.addiction_risk_level}</p>
-                            <p><b>Dependence Class:</b> {prediction.predicted_class}</p>
-                            <p><b>Dependence Risk:</b> {prediction.dependence_risk_level}</p>
-                        </div>
-                    </div>
-                )
-
-                }
-            </div>
+          <div className="w-full rounded-lg border border-black/10 bg-white/45 p-4 dark:border-white/10 dark:bg-white/5 lg:w-80">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">
+              Scale guide
+            </p>
+            <p className="mt-1 text-sm leading-5 text-[var(--color-text-muted)]">
+              Use your best estimate. For scaled questions, 1 is low and 5 is high.
+            </p>
+          </div>
         </div>
-    )
+      </section>
+
+      <div className="grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_28rem]">
+        <form id="assessment-form" className="space-y-4" onSubmit={handleSubmit}>
+          {error && (
+            <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+              <AlertCircle className="mt-0.5 h-5 w-5 flex-none" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          {sections.map((section) => (
+            <section
+              key={section.title}
+              className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-4 shadow-sm dark:border-white/10"
+            >
+              <div className="mb-4 flex flex-col gap-1 border-b border-black/10 pb-3 dark:border-white/10">
+                <h2 className="text-lg font-semibold text-[var(--color-text-dark)]">{section.title}</h2>
+                <p className="text-sm text-[var(--color-text-muted)]">{section.description}</p>
+              </div>
+              <div className="grid gap-x-4 gap-y-3 md:grid-cols-2 xl:grid-cols-3">
+                {section.fields.map(renderField)}
+              </div>
+            </section>
+          ))}
+        </form>
+
+        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <section className="rounded-xl border border-black/10 bg-[var(--color-card-bg)] p-5 shadow-subtle dark:border-white/10">
+            <p className="text-sm font-semibold text-[var(--color-text-dark)]">Submit assessment</p>
+            <p className="mt-1 text-sm leading-5 text-[var(--color-text-muted)]">
+              Your results and plan will appear here after submission.
+            </p>
+            <div className="mt-4 flex gap-3">
+              <Button type="button" variant="outline" onClick={handleReset} className="h-9 flex-1 gap-2 px-3 text-sm">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Clear
+              </Button>
+              <Button type="submit" form="assessment-form" disabled={submitting} className="h-9 flex-1 gap-2 px-3 text-sm">
+                <Send className="h-3.5 w-3.5" />
+                {submitting ? 'Submitting...' : 'Submit'}
+              </Button>
+            </div>
+          </section>
+
+          {planSummary && (
+            <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-subtle">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-emerald-500 text-white">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-[var(--color-text-dark)]">
+                    Your plan is ready
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+                    We made a plan to help you with
+                    {planSummary.focusArea ? ` ${planSummary.focusArea}` : ' your top trigger areas'}.
+                    {planSummary.actionCount > 0
+                      ? ` It includes ${planSummary.actionCount} practical ${planSummary.actionCount === 1 ? 'step' : 'steps'}.`
+                      : ' It is ready when you are.'}
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="mt-4 h-9 w-full gap-2 px-3 text-sm">
+                <Link href="/app/plan">
+                  View my plan
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </section>
+          )}
+
+          {prediction && (
+            <section className="rounded-xl border border-[rgba(227,155,99,0.35)] bg-[rgba(227,155,99,0.10)] p-5 shadow-subtle">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-accent)] text-white">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-[var(--color-text-dark)]">Prediction result</h2>
+                  <p className="text-xs text-[var(--color-text-muted)]">ID: {prediction.assessment_id}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {[
+                  ['Addiction score', prediction.addiction_score],
+                  ['Addiction risk', prediction.addiction_risk_level],
+                  ['Dependence class', prediction.predicted_class],
+                  ['Dependence risk', prediction.dependence_risk_level],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex items-center justify-between rounded-lg border border-black/10 bg-white/55 p-4 dark:border-white/10 dark:bg-white/5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{label}</p>
+                    <p className="text-xl font-semibold text-[var(--color-text-dark)]">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  )
 }

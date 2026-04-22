@@ -9,7 +9,7 @@ export default function OnboardingPage() {
   const router = useRouter()
   const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding)
   const [step, setStep] = useState(1)
-  const [preferredMode, setPreferredMode] = useState<'chat' | 'voice' | null>(null)
+  const [preferredMode, setPreferredMode] = useState<'chat' | null>(null)
   const [tone, setTone] = useState<'calm' | 'direct' | null>(null)
 
   const handleFinish = () => {
@@ -28,7 +28,7 @@ export default function OnboardingPage() {
               Welcome to UrgeEase
             </h1>
             <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              UrgeEase is an AI-powered recovery platform for social media and pornography addiction. After 3–5 conversations, you&apos;ll see a results dashboard with identified triggers and patterns.
+              UrgeEase is an offline recovery support tool for social media and pornography addiction. After 3-5 conversations, you&apos;ll see a results dashboard with identified triggers and patterns.
             </p>
           </div>
 
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
 
           <div>
             <h2 className="mb-4 text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
-              Choose your preferred mode
+              Choose your support mode
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <button
@@ -71,21 +71,19 @@ export default function OnboardingPage() {
               </button>
 
               <button
-                onClick={() => setPreferredMode('voice')}
-                className={`flex flex-col items-center gap-3 rounded-lg border-2 p-6 text-center transition-all ${
-                  preferredMode === 'voice' ? 'border-opacity-100' : 'border-opacity-30'
-                }`}
+                type="button"
+                disabled
+                className="flex cursor-not-allowed flex-col items-center gap-3 rounded-lg border-2 p-6 text-center opacity-60"
                 style={{
-                  borderColor: preferredMode === 'voice' ? 'var(--color-accent)' : 'rgba(227, 155, 99, 0.3)',
-                  backgroundColor: preferredMode === 'voice' ? 'rgba(227, 155, 99, 0.1)' : 'var(--color-card-bg)',
+                  borderColor: 'rgba(227, 155, 99, 0.3)',
+                  backgroundColor: 'var(--color-card-bg)',
                 }}
               >
                 <Mic className="h-8 w-8" style={{ color: 'var(--color-accent)' }} />
                 <div>
                   <div className="font-semibold" style={{ color: 'var(--color-text-dark)' }}>Voice</div>
-                  <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>Speak naturally</div>
+                  <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>Coming soon</div>
                 </div>
-                {preferredMode === 'voice' && <Check className="h-5 w-5" style={{ color: 'var(--color-accent)' }} />}
               </button>
             </div>
 
@@ -93,8 +91,8 @@ export default function OnboardingPage() {
               <div className="flex items-start gap-3">
                 <Video className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
                 <div>
-                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-dark)' }}>Video avatar</div>
-                  <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>Coming soon. You can switch between Chat and Voice anytime.</div>
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-dark)' }}>Voice and video avatar</div>
+                  <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>Coming soon. The demo currently uses text chat only.</div>
                 </div>
               </div>
             </div>

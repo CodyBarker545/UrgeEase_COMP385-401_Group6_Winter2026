@@ -1,0 +1,10 @@
+References for sleep_and_routine
+
+dresp_langley_2022_digital_addiction_sleep_disorders.txt
+https://doi.org/10.3390/ijerph19116910
+
+han_2024_media_use_sleep_meta_analysis.txt
+https://www.jmir.org/2024/1/e48356/
+
+sohn_2021_smartphone_addiction_sleep_quality.txt
+https://doi.org/10.3389/fpsyt.2021.629407

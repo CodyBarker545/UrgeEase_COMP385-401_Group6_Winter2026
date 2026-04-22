@@ -10,6 +10,13 @@ from db.mongo import get_db
 
 
 class ResultService:
+    RISK_RANK = {
+        "low": 1,
+        "moderate": 2,
+        "medium": 2,
+        "high": 3,
+    }
+
     @staticmethod
     def _normalize_id(raw_id: str, field_name: str) -> str:
         normalized = str(raw_id).strip()
@@ -29,6 +36,7 @@ class ResultService:
     def _build_user_query(cls, user_id: str) -> dict[str, Any]:
         normalized = cls._normalize_id(user_id, "userId")
 
+        # Older test/demo data may store userId as either ObjectId or string.
         clauses: list[dict[str, Any]] = [{"userId": normalized}]
 
         try:
@@ -37,6 +45,82 @@ class ResultService:
             pass
 
         return {"$or": clauses}
+
+    @staticmethod
+    def _infer_result_type(result: dict[str, Any]) -> str:
+        result_type = result.get("resultType")
+        if result_type:
+            return str(result_type)
+
+        # Backfill support for results saved before resultType existed.
+        if "addictionScore" in result or result.get("modelName") == "social_media_addiction_rf":
+            return "addiction"
+        if "predictedClass" in result or result.get("modelName") == "social_media_users_rf":
+            return "dependence"
+        return "unknown"
+
+    @staticmethod
+    def _serialize_result(result: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "resultId": str(result["_id"]),
+            "userId": str(result["userId"]) if result.get("userId") else None,
+            "sessionId": str(result["sessionId"]) if result.get("sessionId") else None,
+            "assessmentId": str(result["assessmentId"]) if result.get("assessmentId") else None,
+            "generatedAt": result["generatedAt"].isoformat() if result.get("generatedAt") else None,
+            "resultType": ResultService._infer_result_type(result),
+            "modelName": result.get("modelName"),
+            "addictionScore": result.get("addictionScore"),
+            "predictedClass": result.get("predictedClass"),
+            "riskLevel": result.get("riskLevel"),
+            "probabilities": result.get("probabilities", {}),
+            "topTriggers": result.get("topTriggers", []),
+            "recommendations": result.get("recommendations", []),
+        }
+
+    @classmethod
+    def _build_result_type_query(cls, user_id: str, result_type: str | None = None) -> dict[str, Any]:
+        query = cls._build_user_query(user_id)
+        if result_type == "addiction":
+            query["$and"] = [
+                {
+                    "$or": [
+                        {"resultType": "addiction"},
+                        {"addictionScore": {"$exists": True}},
+                        {"modelName": "social_media_addiction_rf"},
+                    ]
+                }
+            ]
+        elif result_type == "dependence":
+            query["$and"] = [
+                {
+                    "$or": [
+                        {"resultType": "dependence"},
+                        {"predictedClass": {"$exists": True}},
+                        {"modelName": "social_media_users_rf"},
+                    ]
+                }
+            ]
+        return query
+
+    @classmethod
+    def _risk_rank(cls, risk_level: Any) -> int | None:
+        if risk_level is None:
+            return None
+        return cls.RISK_RANK.get(str(risk_level).strip().lower())
+
+    @staticmethod
+    def _classify_numeric_change(latest: int | float | None, previous: int | float | None) -> str:
+        if latest is None or previous is None:
+            return "unknown"
+        if latest < previous:
+            return "improved"
+        if latest > previous:
+            return "worsened"
+        return "unchanged"
+
+    @classmethod
+    def _classify_risk_change(cls, latest: Any, previous: Any) -> str:
+        return cls._classify_numeric_change(cls._risk_rank(latest), cls._risk_rank(previous))
 
     @staticmethod
     def save_addiction_result(
@@ -52,6 +136,7 @@ class ResultService:
             "userId": user_id,
             "sessionId": session_id,
             "generatedAt": datetime.now(UTC),
+            "resultType": "addiction",
             "modelName": result["model"],
             "addictionScore": result["addiction_score"],
             "riskLevel": result["risk_level"],
@@ -80,6 +165,7 @@ class ResultService:
             "userId": user_id,
             "sessionId": session_id,
             "generatedAt": datetime.now(UTC),
+            "resultType": "dependence",
             "modelName": result["model"],
             "predictedClass": result["predicted_class"],
             "riskLevel": result["risk_level"],
@@ -93,29 +179,16 @@ class ResultService:
         return str(inserted.inserted_id)
 
     @staticmethod
-    def get_user_results(user_id: str) -> list[dict[str, Any]]:
+    def get_user_results(user_id: str, result_type: str | None = None) -> list[dict[str, Any]]:
         db = get_db()
 
         cursor = db.results.find(
-            ResultService._build_user_query(user_id)
+            ResultService._build_result_type_query(user_id, result_type)
         ).sort("generatedAt", -1)
 
         results = []
         for res in cursor:
-            results.append({
-                "resultId": str(res["_id"]),
-                "userId": str(res["userId"]) if res.get("userId") else None,
-                "sessionId": str(res["sessionId"]) if res.get("sessionId") else None,
-                "assessmentId": str(res["assessmentId"]) if res.get("assessmentId") else None,
-                "generatedAt": res["generatedAt"].isoformat() if res.get("generatedAt") else None,
-                "modelName": res.get("modelName"),
-                "addictionScore": res.get("addictionScore"),
-                "predictedClass": res.get("predictedClass"),
-                "riskLevel": res.get("riskLevel"),
-                "probabilities": res.get("probabilities", {}),
-                "topTriggers": res.get("topTriggers", []),
-                "recommendations": res.get("recommendations", []),
-            })
+            results.append(ResultService._serialize_result(res))
 
         return results
 
@@ -123,28 +196,16 @@ class ResultService:
     def get_latest_result(user_id: str) -> dict[str, Any] | None:
         db = get_db()
 
+        # The frontend expects the latest addiction result because it contains triggers.
         res = db.results.find_one(
-            ResultService._build_user_query(user_id),
+            ResultService._build_result_type_query(user_id, "addiction"),
             sort=[("generatedAt", -1)]
         )
 
         if not res:
             return None
 
-        return {
-            "resultId": str(res["_id"]),
-            "userId": str(res["userId"]) if res.get("userId") else None,
-            "sessionId": str(res["sessionId"]) if res.get("sessionId") else None,
-            "assessmentId": str(res["assessmentId"]) if res.get("assessmentId") else None,
-            "generatedAt": res["generatedAt"].isoformat() if res.get("generatedAt") else None,
-            "modelName": res.get("modelName"),
-            "addictionScore": res.get("addictionScore"),
-            "predictedClass": res.get("predictedClass"),
-            "riskLevel": res.get("riskLevel"),
-            "probabilities": res.get("probabilities", {}),
-            "topTriggers": res.get("topTriggers", []),
-            "recommendations": res.get("recommendations", []),
-        }
+        return ResultService._serialize_result(res)
 
     @staticmethod
     def get_result_by_id(result_id: str) -> dict[str, Any] | None:
@@ -154,17 +215,89 @@ class ResultService:
         if not res:
             return None
 
+        return ResultService._serialize_result(res)
+
+    @staticmethod
+    def get_user_analytics(user_id: str) -> dict[str, Any]:
+        addiction_results = list(reversed(ResultService.get_user_results(user_id, result_type="addiction")))
+        dependence_results = ResultService.get_user_results(user_id, result_type="dependence")
+
+        # Addiction and dependence results are saved separately, so match them by assessment.
+        dependence_by_assessment = {
+            result.get("assessmentId"): result
+            for result in dependence_results
+            if result.get("assessmentId")
+        }
+
+        timeline: list[dict[str, Any]] = []
+        for index, addiction in enumerate(addiction_results, start=1):
+            dependence = dependence_by_assessment.get(addiction.get("assessmentId"))
+            timeline.append(
+                {
+                    "assessmentNumber": index,
+                    "assessmentId": addiction.get("assessmentId"),
+                    "resultId": addiction.get("resultId"),
+                    "generatedAt": addiction.get("generatedAt"),
+                    "addictionScore": addiction.get("addictionScore"),
+                    "addictionRiskLevel": addiction.get("riskLevel"),
+                    "dependenceClass": dependence.get("predictedClass") if dependence else None,
+                    "dependenceRiskLevel": dependence.get("riskLevel") if dependence else None,
+                    "topTriggers": addiction.get("topTriggers", []),
+                    "recommendations": addiction.get("recommendations", []),
+                }
+            )
+
+        latest = timeline[-1] if timeline else None
+        previous = timeline[-2] if len(timeline) > 1 else None
+        score_change = (
+            (latest.get("addictionScore") - previous.get("addictionScore"))
+            if latest and previous and latest.get("addictionScore") is not None and previous.get("addictionScore") is not None
+            else None
+        )
+        risk_change = (
+            ResultService._classify_risk_change(latest.get("addictionRiskLevel"), previous.get("addictionRiskLevel"))
+            if latest and previous
+            else "unknown"
+        )
+        score_trend = (
+            ResultService._classify_numeric_change(latest.get("addictionScore"), previous.get("addictionScore"))
+            if latest and previous
+            else "unknown"
+        )
+
+        # Risk level is easier to explain to users, but score breaks ties.
+        trend = risk_change if risk_change != "unchanged" else score_trend
+        if trend == "unknown":
+            trend = score_trend
+
+        trigger_counts: dict[str, int] = {}
+        for item in timeline:
+            for trigger in item.get("topTriggers", []):
+                trigger_counts[trigger] = trigger_counts.get(trigger, 0) + 1
+
+        recurring_triggers = [
+            {"trigger": trigger, "count": count}
+            for trigger, count in sorted(trigger_counts.items(), key=lambda item: (-item[1], item[0]))
+        ]
+
+        summary = "Complete more assessments to see progress over time."
+        if latest and previous:
+            if trend == "improved":
+                summary = "Your latest assessment suggests improvement compared with your previous assessment."
+            elif trend == "worsened":
+                summary = "Your latest assessment suggests higher current risk than your previous assessment."
+            elif trend == "unchanged":
+                summary = "Your latest assessment looks broadly stable compared with your previous assessment."
+        elif latest:
+            summary = "This is your baseline assessment. Future assessments will show whether risk is improving, worsening, or stable."
+
         return {
-            "resultId": str(res["_id"]),
-            "userId": str(res["userId"]) if res.get("userId") else None,
-            "sessionId": str(res["sessionId"]) if res.get("sessionId") else None,
-            "assessmentId": str(res["assessmentId"]) if res.get("assessmentId") else None,
-            "generatedAt": res["generatedAt"].isoformat() if res.get("generatedAt") else None,
-            "modelName": res.get("modelName"),
-            "addictionScore": res.get("addictionScore"),
-            "predictedClass": res.get("predictedClass"),
-            "riskLevel": res.get("riskLevel"),
-            "probabilities": res.get("probabilities", {}),
-            "topTriggers": res.get("topTriggers", []),
-            "recommendations": res.get("recommendations", []),
+            "assessmentCount": len(timeline),
+            "latest": latest,
+            "previous": previous,
+            "scoreChange": score_change,
+            "trend": trend,
+            "summary": summary,
+            "recurringTriggers": recurring_triggers,
+            "timeline": timeline,
         }

@@ -94,6 +94,21 @@ class PlanService:
             )
         return actions
 
+    @staticmethod
+    def _build_trigger_actions(recommendations: list[str]) -> list[dict[str, Any]]:
+        actions: list[dict[str, Any]] = []
+        for index, recommendation in enumerate(recommendations[:3], start=1):
+            actions.append(
+                {
+                    "id": f"action_{index}",
+                    "title": f"Practice trigger strategy {index}",
+                    "description": recommendation,
+                    "frequency": "daily",
+                    "completed": False,
+                }
+            )
+        return actions
+
     def create_plan(
         self,
         *,
@@ -115,6 +130,9 @@ class PlanService:
         focus_area, summary = self._determine_focus_area(answers)
         now = datetime.now(UTC)
         risk_level = latest_result.get("risk_level") or latest_result.get("riskLevel") or "Unknown"
+        top_triggers = latest_result.get("topTriggers", []) or []
+        recommendations = latest_result.get("recommendations", []) or []
+        trigger_actions = self._build_trigger_actions(recommendations)
 
         plan_doc = {
             "userId": user_object_id,
@@ -125,12 +143,17 @@ class PlanService:
             "status": "active",
             "focusArea": focus_area,
             "riskLevel": risk_level,
-            "summary": summary,
+            "topTriggers": top_triggers,
+            "summary": (
+                f"{summary} Key trigger patterns include {', '.join(top_triggers[:3])}."
+                if top_triggers
+                else summary
+            ),
             "goals": [
                 "Reduce the impact of your highest-risk trigger pattern.",
                 "Practice one repeatable coping step each day this week.",
             ],
-            "actions": self._build_actions(focus_area),
+            "actions": trigger_actions or self._build_actions(focus_area),
         }
 
         inserted = self.db.plans.insert_one(plan_doc)
@@ -176,6 +199,7 @@ class PlanService:
             "status": plan.get("status"),
             "focusArea": plan.get("focusArea"),
             "riskLevel": plan.get("riskLevel"),
+            "topTriggers": plan.get("topTriggers", []),
             "summary": plan.get("summary"),
             "goals": plan.get("goals", []),
             "actions": plan.get("actions", []),

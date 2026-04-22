@@ -2,9 +2,30 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BarChart3, Lock, ListChecks } from 'lucide-react'
+import { BarChart3, CalendarDays, ListChecks, Lock, Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { getResults } from '@/frontend/lib/api'
 import type { ResultsSummary } from '@/frontend/lib/types'
+
+function formatDate(value: string | null) {
+  if (!value) return 'Unknown date'
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function formatScoreChange(change: number | null) {
+  if (change === null) return 'No comparison yet'
+  if (change === 0) return 'No score change'
+  return `${change > 0 ? '+' : ''}${change} from previous`
+}
+
+function TrendIcon({ trend }: { trend: NonNullable<ResultsSummary['analytics']>['trend'] }) {
+  if (trend === 'improved') return <TrendingDown className="h-5 w-5" style={{ color: '#22c55e' }} />
+  if (trend === 'worsened') return <TrendingUp className="h-5 w-5" style={{ color: '#dc2626' }} />
+  return <Minus className="h-5 w-5" style={{ color: 'var(--color-text-muted)' }} />
+}
 
 export default function ResultsPage() {
   const [results, setResults] = useState<ResultsSummary | null>(null)
@@ -21,10 +42,10 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div className="h-8 w-64 animate-pulse rounded" style={{ backgroundColor: 'rgba(227, 155, 99, 0.2)' }} />
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
             <div key={i} className="h-32 animate-pulse rounded-lg" style={{ backgroundColor: 'rgba(227, 155, 99, 0.1)' }} />
           ))}
         </div>
@@ -47,35 +68,98 @@ export default function ResultsPage() {
             Results Dashboard Locked
           </h2>
           <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            Complete 3–5 conversations to unlock your personalized results dashboard.
+            Complete an assessment to unlock your personalized results dashboard.
           </p>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>
             You&apos;ve completed {results?.sessionsCompleted || 0} session{results?.sessionsCompleted !== 1 ? 's' : ''}.
           </p>
           <Link
-            href="/app/home"
+            href="/app/assessment"
             className="mt-6 rounded-full px-6 py-3 text-sm font-medium transition-all"
             style={{
               backgroundColor: 'var(--color-accent)',
               color: 'var(--color-text-light)',
             }}
           >
-            Start a Session
+            Take Assessment
           </Link>
         </div>
       </div>
     )
   }
 
+  const analytics = results.analytics
+  const latest = analytics?.latest
+  const previous = analytics?.previous
+  const score = latest?.addictionScore ?? null
+  const scorePercent = score === null ? 0 : Math.max(0, Math.min(100, Math.round((score / 9) * 100)))
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-3xl font-semibold" style={{ color: 'var(--color-text-dark)', fontFamily: 'var(--font-primary)' }}>
           Results Dashboard
         </h1>
         <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Insights from {results.sessionsCompleted} conversations
+          Assessment trends, trigger patterns, and plan progress over time.
         </p>
+      </div>
+
+      {analytics && (
+        <div
+          className="rounded-2xl p-6 shadow-lg"
+          style={{
+            backgroundColor: 'var(--color-card-bg)',
+            border: '1px solid rgba(227, 155, 99, 0.2)',
+          }}
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <TrendIcon trend={analytics.trend} />
+                <h2 className="text-xl font-semibold" style={{ color: 'var(--color-text-dark)' }}>
+                  {analytics.trend === 'improved'
+                    ? 'Improving'
+                    : analytics.trend === 'worsened'
+                      ? 'Needs Attention'
+                      : analytics.trend === 'unchanged'
+                        ? 'Stable'
+                        : 'Baseline'}
+                </h2>
+              </div>
+              <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: 'var(--color-text-muted)' }}>
+                {analytics.summary}
+              </p>
+            </div>
+            <div className="rounded-lg px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(227, 155, 99, 0.1)', color: 'var(--color-text-dark)' }}>
+              {analytics.assessmentCount} assessment{analytics.assessmentCount !== 1 ? 's' : ''} recorded
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl p-5 shadow-lg" style={{ backgroundColor: 'var(--color-card-bg)', border: '1px solid rgba(227, 155, 99, 0.2)' }}>
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Latest score</p>
+          <p className="mt-2 text-3xl font-semibold" style={{ color: 'var(--color-text-dark)' }}>{score ?? '-'}</p>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(227, 155, 99, 0.2)' }}>
+            <div className="h-full" style={{ width: `${scorePercent}%`, backgroundColor: 'var(--color-accent)' }} />
+          </div>
+        </div>
+        <div className="rounded-2xl p-5 shadow-lg" style={{ backgroundColor: 'var(--color-card-bg)', border: '1px solid rgba(227, 155, 99, 0.2)' }}>
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Change</p>
+          <p className="mt-2 text-2xl font-semibold" style={{ color: 'var(--color-text-dark)' }}>{formatScoreChange(analytics?.scoreChange ?? null)}</p>
+          <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            {previous ? `Compared with ${formatDate(previous.generatedAt)}` : 'Future assessments will compare against this baseline.'}
+          </p>
+        </div>
+        <div className="rounded-2xl p-5 shadow-lg" style={{ backgroundColor: 'var(--color-card-bg)', border: '1px solid rgba(227, 155, 99, 0.2)' }}>
+          <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Current risk</p>
+          <p className="mt-2 text-2xl font-semibold" style={{ color: 'var(--color-text-dark)' }}>{latest?.addictionRiskLevel ?? 'Unknown'}</p>
+          <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            Dependence risk: {latest?.dependenceRiskLevel ?? 'Unknown'}
+          </p>
+        </div>
       </div>
 
       {results.activePlan && (
@@ -99,6 +183,65 @@ export default function ResultsPage() {
         </Link>
       )}
 
+      {analytics?.recurringTriggers?.length ? (
+        <section className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: 'var(--color-card-bg)', border: '1px solid rgba(227, 155, 99, 0.2)' }}>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>Recurring Triggers</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {analytics.recurringTriggers.slice(0, 6).map((item) => (
+              <span
+                key={item.trigger}
+                className="rounded-full px-3 py-1 text-xs"
+                style={{ backgroundColor: 'rgba(227, 155, 99, 0.12)', color: 'var(--color-accent)' }}
+              >
+                {item.trigger} ({item.count})
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {analytics?.timeline?.length ? (
+        <section className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: 'var(--color-card-bg)', border: '1px solid rgba(227, 155, 99, 0.2)' }}>
+          <div className="mb-4 flex items-center gap-2">
+            <CalendarDays className="h-5 w-5" style={{ color: 'var(--color-accent)' }} />
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>Assessment Timeline</h2>
+          </div>
+          <div className="space-y-3">
+            {[...analytics.timeline].reverse().map((item) => (
+              <div key={item.resultId ?? item.assessmentNumber} className="rounded-lg border p-4" style={{ borderColor: 'rgba(227, 155, 99, 0.2)' }}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-dark)' }}>
+                      Assessment {item.assessmentNumber}
+                    </p>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>{formatDate(item.generatedAt)}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm sm:text-right">
+                    <div>
+                      <p style={{ color: 'var(--color-text-muted)' }}>Score</p>
+                      <p className="font-semibold" style={{ color: 'var(--color-text-dark)' }}>{item.addictionScore ?? '-'}</p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--color-text-muted)' }}>Risk</p>
+                      <p className="font-semibold" style={{ color: 'var(--color-text-dark)' }}>{item.addictionRiskLevel ?? 'Unknown'}</p>
+                    </div>
+                  </div>
+                </div>
+                {item.topTriggers.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {item.topTriggers.slice(0, 4).map((trigger) => (
+                      <span key={trigger} className="rounded-full px-2 py-1 text-xs" style={{ backgroundColor: 'rgba(227, 155, 99, 0.08)', color: 'var(--color-text-muted)' }}>
+                        {trigger}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="space-y-4">
         {results.addictions.map((addiction) => (
           <Link
@@ -109,51 +252,21 @@ export default function ResultsPage() {
               borderColor: 'rgba(227, 155, 99, 0.2)',
               backgroundColor: 'var(--color-card-bg)',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-accent)'
-              e.currentTarget.style.backgroundColor = 'rgba(227, 155, 99, 0.05)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(227, 155, 99, 0.2)'
-              e.currentTarget.style.backgroundColor = 'var(--color-card-bg)'
-            }}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
-                {addiction.name}
-              </h3>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" style={{ color: 'var(--color-accent)' }} />
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text-dark)' }}>
+                  {addiction.name}
+                </h3>
+              </div>
               <span className="text-sm font-medium" style={{ color: 'var(--color-accent)' }}>
                 {addiction.confidence}% confidence
               </span>
             </div>
-            <div className="mb-3 h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'rgba(227, 155, 99, 0.2)' }}>
-              <div
-                className="h-full transition-all"
-                style={{
-                  width: `${addiction.confidence}%`,
-                  backgroundColor: 'var(--color-accent)',
-                }}
-              />
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
-                Top Triggers
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {addiction.topTriggers.map((trigger, i) => (
-                  <span
-                    key={i}
-                    className="rounded-full px-3 py-1 text-xs"
-                    style={{
-                      backgroundColor: 'rgba(227, 155, 99, 0.1)',
-                      color: 'var(--color-accent)',
-                    }}
-                  >
-                    {trigger}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+              Open detailed triggers and recommendations.
+            </p>
           </Link>
         ))}
       </div>

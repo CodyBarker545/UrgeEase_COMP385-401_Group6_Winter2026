@@ -48,6 +48,9 @@ def test_get_user_results_and_latest_and_by_id(client):
 
     assert latest_response.status_code == 200
     assert latest_data["userId"] == user_id
+    assert latest_data["resultType"] == "addiction"
+    assert latest_data["addictionScore"] is not None
+    assert latest_data["topTriggers"]
 
     assert by_id_response.status_code == 200
     assert by_id_data["resultId"] == addiction_result_id
@@ -62,3 +65,45 @@ def test_get_latest_result_invalid_user_id(client):
 
     assert response.status_code == 404
     assert data["error"] == "No results found"
+
+
+def test_get_user_analytics_returns_assessment_timeline(client):
+    user_id, session_id, email = create_user_and_session(
+        client,
+        prefix="analytics",
+        session_title="Analytics Route Test",
+    )
+
+    first_response = client.post(
+        "/api/assessments",
+        json=build_assessment_payload(user_id, session_id),
+    )
+    assert first_response.status_code == 201
+
+    second_response = client.post(
+        "/api/assessments",
+        json=build_assessment_payload(
+            user_id,
+            session_id,
+            overrides={
+                "Mindless_Use": "5",
+                "Distraction_When_Busy": "5",
+                "Sleep_Issues": "5",
+                "Sleep_Hours_Per_Night": "4",
+            },
+        ),
+    )
+    assert second_response.status_code == 201
+
+    response = client.get(f"/api/results/analytics/{user_id}")
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert data["assessmentCount"] == 2
+    assert len(data["timeline"]) == 2
+    assert data["latest"]["assessmentNumber"] == 2
+    assert "trend" in data
+    assert "summary" in data
+    assert data["recurringTriggers"]
+
+    cleanup_user_data(email=email, user_id=user_id)

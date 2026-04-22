@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { MessageSquare, Mic, Plus, Calendar } from 'lucide-react'
+import { MessageSquare, Mic, Calendar } from 'lucide-react'
 import { getSessions, createSession } from '@/frontend/lib/api'
 import type { SessionSummary } from '@/frontend/lib/types'
 
@@ -21,9 +21,9 @@ export default function SessionsPage() {
     loadSessions()
   }, [])
 
-  const handleNewSession = async (mode: 'chat' | 'voice') => {
-    const { sessionId } = await createSession({ mode })
-    router.push(`/app/session/${mode}?sessionId=${sessionId}`)
+  const handleNewChat = async () => {
+    const { sessionId } = await createSession({ mode: 'chat' })
+    router.push(`/app/session/chat?sessionId=${sessionId}`)
   }
 
   return (
@@ -39,7 +39,7 @@ export default function SessionsPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => handleNewSession('chat')}
+            onClick={handleNewChat}
             className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all"
             style={{
               backgroundColor: 'var(--color-accent)',
@@ -48,17 +48,6 @@ export default function SessionsPage() {
           >
             <MessageSquare className="h-4 w-4" />
             New Chat
-          </button>
-          <button
-            onClick={() => handleNewSession('voice')}
-            className="flex items-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all"
-            style={{
-              borderColor: 'var(--color-accent)',
-              color: 'var(--color-accent)',
-            }}
-          >
-            <Mic className="h-4 w-4" />
-            New Voice
           </button>
         </div>
       </div>
@@ -86,7 +75,7 @@ export default function SessionsPage() {
             No sessions yet
           </h3>
           <p className="mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            Start a new chat or voice session to begin your journey.
+            Start a new chat session to begin your journey.
           </p>
         </div>
       ) : (

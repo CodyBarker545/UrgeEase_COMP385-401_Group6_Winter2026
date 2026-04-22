@@ -44,7 +44,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              UrgeEase is an AI-powered recovery platform for social media and pornography addiction—chat or voice, with results that help you understand triggers over time.
+              UrgeEase is an offline recovery support tool for social media and pornography addiction, with chat support and results that help you understand triggers over time.
             </motion.p>
             <motion.div
               id="beta-signup"
@@ -162,9 +162,9 @@ export default function Home() {
         <div className="container">
           <div className="stats-grid">
             <div className="stat-card">
-              <div className="stat-number">Chat or Voice</div>
+              <div className="stat-number">Offline Chat</div>
               <p className="stat-description">
-                Choose text chat or voice. Switch anytime during a session.
+                Use text chat for short, private support when urges show up.
               </p>
             </div>
             <div className="stat-card">
@@ -421,7 +421,7 @@ export default function Home() {
               </div>
               <h4 className="roadmap-title">Onboarding in 3 steps</h4>
               <p className="roadmap-description">
-                Create an account, verify your email, and choose whether you&apos;d like to start in Chat or Voice.
+                Create an account, verify your email, and start with text chat support.
               </p>
             </div>
 
@@ -432,9 +432,9 @@ export default function Home() {
                   <path d="M10 16h12M10 20h8" />
                 </svg>
               </div>
-              <h4 className="roadmap-title">Switch modes anytime</h4>
+              <h4 className="roadmap-title">Voice mode planned</h4>
               <p className="roadmap-description">
-                Move between chat and voice support without losing the thread of your conversation.
+                Voice support is planned for a future version. The current demo focuses on stable text chat.
               </p>
             </div>
 
@@ -498,7 +498,7 @@ export default function Home() {
             <details className="faq-item">
               <summary className="faq-question">What interaction modes are available?</summary>
               <p className="faq-answer">
-                You can talk with UrgeEase via Chat or Voice. A video avatar is planned but is not available in this version.
+                The current demo supports text chat. Voice support and a video avatar are planned but are not available in this version.
               </p>
             </details>
             <details className="faq-item">
@@ -535,7 +535,7 @@ export default function Home() {
             </div>
             <div className="testimonial-card">
               <p className="testimonial-text">
-                &quot;Chat or voice—whatever I can handle that day.&quot;{' '}
+                &quot;A short chat when I need a calm next step.&quot;{' '}
                 <span style={{ fontSize: '12px', opacity: 0.7 }}>(Demo copy)</span>
               </p>
               <div className="testimonial-author">

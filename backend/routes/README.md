@@ -1,13 +1,8 @@
-﻿# Routes Folder
+# Routes Folder
 
 This folder contains the Flask blueprints for the UrgeEase backend API.
 
-Routes handle:
-
-- request validation
-- route parameters and JSON bodies
-- HTTP response formatting
-- delegation to service-layer business logic
+Routes handle request validation, route parameters, JSON bodies, HTTP response formatting, and delegation to service-layer business logic.
 
 ## Files
 
@@ -47,12 +42,13 @@ Main responsibilities:
 
 ### `result_routes.py`
 
-Handles retrieval of saved model outputs.
+Handles retrieval of saved model outputs and analytics.
 
 Main responsibilities:
 
 - fetch all saved results for a user
-- fetch the latest result for a user
+- fetch the latest addiction result for a user
+- fetch result analytics for a user
 - fetch one result by ID
 
 Notes:
@@ -60,6 +56,7 @@ Notes:
 - results are returned newest first
 - invalid `userId` and `resultId` values return `400`
 - results are expected to be linked to a valid `userId`
+- analytics include trend direction, score history, dependence history, and recurring triggers
 
 ### `prediction_routes.py`
 
@@ -89,6 +86,7 @@ This route:
 - validates the complete questionnaire payload
 - calls `AssessmentService`
 - runs both Random Forest models
+- analyzes top triggers
 - stores raw answers in `assessments`
 - stores model outputs in `results`
 - creates a recovery plan in `plans`
@@ -119,7 +117,6 @@ Current behavior:
 
 - accepts the session ID from the URL
 - accepts the user `userId` in the body
-- builds chat context from recent messages, saved results, result history, and the active plan
-- generates an assistant response through the RAG pipeline
-- falls back to a demo reply if Gemini fails
+- builds chat context from recent messages, saved results, result history, top triggers, and the active plan
+- generates a short assistant response through the local RAG pipeline by default
 - saves both the user message and the assistant message in MongoDB

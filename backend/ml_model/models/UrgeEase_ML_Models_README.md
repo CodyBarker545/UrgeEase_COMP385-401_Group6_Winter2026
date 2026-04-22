@@ -2,7 +2,7 @@
 
 ## Overview
 
-The UrgeEase application uses machine learning models to detect and track **social media addiction severity** based on behavioral and survey data.
+UrgeEase uses machine learning models to estimate social media addiction severity and behavioral dependence risk from assessment answers.
 
 Two datasets were used:
 
@@ -14,37 +14,25 @@ Two machine learning algorithms were evaluated:
 - Random Forest
 - XGBoost
 
----
+## Current Design
 
-# Updated Design (IMPORTANT)
-
-Originally, models classified users into 3 risk levels:
-
-0 = Low  
-1 = Moderate  
-2 = High
-
-### Current Approach
-
-The system now predicts a **raw addiction score (2–9)** instead of only categories.
+The system predicts a raw addiction score instead of only a broad category.
 
 This allows:
 
 - finer-grained feedback
 - progress tracking over time
-- better personalization
+- better personalization for plans and chat context
 
 The score is still mapped to risk levels for interpretation:
 
 | Score Range | Risk Level |
 | ----------- | ---------- |
-| 2–4         | Low        |
-| 5–6         | Moderate   |
-| 7–9         | High       |
+| 2-4         | Low        |
+| 5-6         | Moderate   |
+| 7-9         | High       |
 
----
-
-# Dataset 1 – Social Media Addiction vs Relationships
+## Dataset 1 - Social Media Addiction vs Relationships
 
 This dataset contains structured information about students and their social media usage patterns.
 
@@ -70,15 +58,13 @@ This dataset contains structured information about students and their social med
 
 Previously:
 
-- Addiction_Level (0–2)
+- Addiction_Level (0-2)
 
 Now:
 
-- **Addicted_Score (2–9)** is used directly
+- Addicted_Score is used directly
 
----
-
-# Dataset 2 – Social Media Users Behavioral Survey
+## Dataset 2 - Social Media Users Behavioral Survey
 
 This dataset contains behavioral and psychological indicators.
 
@@ -108,11 +94,9 @@ Demographics:
 - Relationship_Status
 - Occupation_Status
 
----
+## Behavioral Dependence Score
 
-# Behavioral Dependence Score
-
-Since Dataset 2 had no labels, a **weighted behavioral score** was created.
+Since Dataset 2 had no labels, a weighted behavioral score was created.
 
 ### Weighted Features
 
@@ -135,88 +119,49 @@ Since Dataset 2 had no labels, a **weighted behavioral score** was created.
 | Score     | Risk Level |
 | --------- | ---------- |
 | < 2.5     | Low        |
-| 2.5 – 3.5 | Moderate   |
+| 2.5-3.5   | Moderate   |
 | > 3.5     | High       |
 
----
+## Machine Learning Pipeline
 
-# Machine Learning Pipeline
+Preprocessing:
 
-### Preprocessing
+- numeric values use median imputation and standard scaling
+- categorical values use most-frequent imputation and one-hot encoding
 
-Numeric:
+Train/test split:
 
-- Median imputation
-- Standard scaling
+- 80% training
+- 20% testing
 
-Categorical:
+Stratification was removed for the score model due to class imbalance.
 
-- Most frequent imputation
-- One-Hot Encoding
+## Models
 
-### Train/Test Split
+### Random Forest
 
-- 80% Training
-- 20% Testing
+- robust to noisy behavioral data
+- handles mixed feature types
+- stable performance
 
-Note:
+### XGBoost
 
-- Stratification removed for score model due to class imbalance
+- strong performance on structured datasets
+- captures complex relationships
 
----
+## Model Results
 
-# Models
+### Addiction Score Model
 
-## Random Forest
+Accuracy: 94.33%
 
-- Robust to noisy behavioral data
-- Handles mixed feature types
-- Stable performance
+Key observations:
 
-## XGBoost
+- Model performs well on common scores.
+- Rare scores are harder to learn due to imbalance.
+- Most errors occur between adjacent scores, which still preserves relative severity.
 
-- Strong performance on structured datasets
-- Captures complex relationships
-
----
-
-# Model Results (Updated)
-
-## Addiction Score Model (1–9)
-
-Accuracy: **94.33%**
-
-### Key Observations
-
-- Model performs well on common scores (5–8)
-- Rare scores (e.g., 2) are poorly learned due to imbalance
-- Most errors occur between **adjacent scores** (e.g., 6 → 5 or 7)
-
-This indicates the model captures **relative severity effectively**.
-
----
-
-# Testing (NEW)
-
-Pytest-based validation was implemented.
-
-### Tests include:
-
-- Model loading
-- Prediction correctness
-- Probability output validation
-- Deterministic predictions
-- Input schema validation
-
-This ensures:
-
-- reliability
-- consistent outputs
-- protection against invalid inputs
-
----
-
-# Model Comparison
+## Model Comparison
 
 | Dataset               | Model         | Accuracy |
 | --------------------- | ------------- | -------- |
@@ -224,73 +169,56 @@ This ensures:
 | Users Survey          | Random Forest | 85.42%   |
 | Users Survey          | XGBoost       | 83.33%   |
 
----
-
-# Final Model Choice
+## Final Model Choice
 
 For UrgeEase:
 
-### Primary Model
+- Primary model: Random Forest for behavioral dependence risk
+- Secondary model: Random Forest for score-based addiction severity
 
-- Random Forest (Users Behavioral Dataset)
+## Integration with UrgeEase
 
-### Secondary Model
+### Step 1 - User Input
 
-- Random Forest (Score-based Addiction Model)
+Users provide usage patterns, emotional indicators, and behavioral responses through the assessment page.
 
----
+### Step 2 - Prediction
 
-# Integration with UrgeEase
+The backend runs both model services and stores derived outputs in the `results` collection.
 
-### Step 1 – User Input
+### Step 3 - Plan, Analytics, and Chat Context
 
-Users provide:
+The backend uses model outputs to:
 
-- usage patterns
-- emotional indicators
-- behavioral responses
+- map the result to a risk level
+- identify top triggers
+- create a recovery plan
+- show trends over time
+- guide local RAG chat responses
 
----
+## Testing
 
-### Step 2 – Prediction
+Pytest-based validation covers:
 
-Model outputs:
+- model loading
+- prediction correctness
+- probability output validation
+- deterministic predictions
+- input schema validation
 
----
+Run tests from `backend`:
 
-### Step 3 – AI Intervention
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests -p no:cacheprovider
+```
 
-Based on score:
+## Model Files
 
-| Score Range | Response                          |
-| ----------- | --------------------------------- |
-| Low         | Healthy usage feedback            |
-| Moderate    | Behavior improvement strategies   |
-| High        | AI-generated recovery plans (RAG) |
-
----
-
-# Key Design Decision
-
-The system uses a **continuous addiction score (2–9)** rather than only categories.
-
-This enables:
-
-- tracking user progress over time
-- detecting gradual improvement
-- more personalized AI responses
-
----
-
-# Model Files
-
-Stored in:
+Model files are stored in this folder.
 
 Examples:
 
-- social_media_addiction_rf.joblib
-- social_media_addiction_rf_score.joblib
-- social_media_users_rf.joblib
-- social_media_users_xgb.joblib
-
----
+- `social_media_addiction_rf.joblib`
+- `social_media_addiction_rf_score.joblib`
+- `social_media_users_rf.joblib`
+- `social_media_users_xgb.joblib`

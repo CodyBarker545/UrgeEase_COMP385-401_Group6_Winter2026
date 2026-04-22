@@ -66,7 +66,7 @@ export default function SignUpPage() {
     <AuthCard>
       <AuthHeader
         title="Create your UrgeEase account"
-        subtitle="Three steps: account, email verification, choose Chat or Voice."
+        subtitle="Three steps: account, email verification, start chat support."
       />
       <form
         onSubmit={handleSubmit(onSubmit)}

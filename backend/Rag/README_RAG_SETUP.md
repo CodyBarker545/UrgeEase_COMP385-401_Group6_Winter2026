@@ -1,30 +1,26 @@
-﻿# UrgeEase RAG Setup Guide
+# UrgeEase RAG Setup Guide
 
 This document explains how the Retrieval-Augmented Generation flow is set up in the current backend.
 
-UrgeEase uses RAG to ground recovery-support replies in local support documents, then sends the final prompt to Gemini. If Gemini is unavailable, the backend chat service falls back to a shorter demo response so the chat still works for demos and testing.
+UrgeEase uses RAG to ground recovery-support replies in local support documents. The current demo path generates short local responses by default, so chat can run without an external LLM. Gemini support remains in the code as an optional future hosted provider.
 
 ## Current RAG Flow
 
 The live backend chat path is:
 
-1. `chat_routes.py` receives `POST /api/sessions/<session_id>/chat`
-2. `ChatService` loads:
-   - recent messages
-   - latest saved results
-   - previous result history
-   - the user's active recovery plan
-3. `ChatService` builds a short, practical prompt
-4. `LLMService` sends that prompt through `UrgeEaseRAGChain`
-5. the RAG chain retrieves support content from local `.txt` files
-6. Gemini generates the final response
+1. `chat_routes.py` receives `POST /api/sessions/<session_id>/chat`.
+2. `ChatService` loads recent messages, latest results, previous result history, top triggers, and the active recovery plan.
+3. `ChatService` builds a short, practical prompt.
+4. `LLMService` sends that prompt through `UrgeEaseRAGChain`.
+5. The RAG chain expands the query, routes it toward likely support categories, and retrieves local support content.
+6. The local chat generator builds a short response from the retrieved context.
 
 ## Main Files
 
 `backend/Rag/rag_chain.py`
 - core RAG pipeline
 - vector-store build/load logic
-- crisis handling and retrieval flow
+- crisis handling, query expansion, category routing, retrieval, and local response generation
 
 `backend/Rag/data/`
 - local support and coping documents used as the knowledge base
@@ -33,11 +29,13 @@ The live backend chat path is:
 - persisted FAISS index files
 
 `backend/services/llm_service.py`
-- creates and caches the Gemini-backed RAG chain
+- creates and caches the RAG chain
+- defaults to local mode
+- can opt into Gemini later with environment variables
 
 `backend/services/chat_service.py`
-- prepares assessment, plan, and message context before generation
-- uses a demo fallback when Gemini fails
+- prepares assessment, plan, trigger, and message context before generation
+- keeps replies short and stores both user and assistant turns
 
 ## Environment Variables
 
@@ -46,8 +44,11 @@ Create `backend/.env` with:
 ```text
 MONGO_URI=your_mongodb_connection_string
 MONGO_DB_NAME=UrgeEase
-GEMINI_API_KEY=your_actual_key_here
-GEMINI_MODEL=gemini-2.5-flash
+
+# Optional future hosted LLM mode:
+# CHAT_LLM_PROVIDER=gemini
+# GEMINI_API_KEY=your_actual_key_here
+# GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ## Installing Backend Dependencies
@@ -76,41 +77,24 @@ When the RAG chain starts:
 
 This means the backend does not need to rebuild the vector store on every chat request.
 
-## Backend Usage
-
-The backend already uses the RAG chain through:
-
-```text
-backend/services/llm_service.py
-```
-
-`LLMService`:
-
-- reads `GEMINI_API_KEY`
-- builds a `UrgeEaseRAGChain`
-- uses Gemini for generation
-- caches the service instance with `lru_cache`
-
 ## Chat Behavior
 
 The chat layer is intentionally constrained to stay practical.
 
-Current chat prompting emphasizes:
+Current chat behavior emphasizes:
 
 - 2 to 4 sentence responses
 - one or two concrete actions
-- focus on the highest-risk assessment area
+- focus on the highest-risk assessment or trigger area
 - preference for the next pending recovery-plan action
 - short progress mentions only when useful
 
-## Testing the RAG Chain
+## Testing
 
-You can still test the backend chat stack locally after configuring `.env`.
-
-From `backend`:
+Run backend tests from `backend`:
 
 ```powershell
-python tests\test_gemini_chat.py
+.\.venv\Scripts\python.exe -m pytest tests -p no:cacheprovider
 ```
 
 You can also run the full Flask backend:
@@ -125,30 +109,18 @@ Then test chat through:
 POST /api/sessions/<session_id>/chat
 ```
 
+## Optional Gemini Mode
+
+Gemini is not required for the current demo. To try the hosted provider later:
+
+1. Set `CHAT_LLM_PROVIDER=gemini`.
+2. Set `GEMINI_API_KEY`.
+3. Optionally set `GEMINI_MODEL`.
+4. Restart the backend.
+
+If Gemini is slow or unavailable, switch back to the default local mode for the demo.
+
 ## Common Issues
-
-### `Missing GEMINI_API_KEY in .env`
-
-Cause:
-
-- `backend/.env` is missing the key
-
-Fix:
-
-- add `GEMINI_API_KEY`
-- restart the backend
-
-### Slow or failing Gemini responses
-
-Cause:
-
-- provider latency
-- temporary overload
-
-Fix:
-
-- retry the request
-- the backend fallback path should still return a demo reply if Gemini fails
 
 ### `ModuleNotFoundError: No module named 'Rag'`
 
@@ -160,13 +132,24 @@ Fix:
 
 - run backend scripts from `backend`
 
+### Chat feels too generic
+
+Cause:
+
+- local support documents may not cover the user's concern well enough
+
+Fix:
+
+- add focused `.txt` support notes to `backend/Rag/data`
+- restart the backend so the vector store can rebuild if the corpus changed
+
 ## Summary
 
-The current production-style flow is:
+The current flow is:
 
 - local support documents in `backend/Rag/data`
 - FAISS vector retrieval
-- Gemini generation
+- local response generation by default
+- optional Gemini generation for future hosted expansion
 - Flask chat route integration
 - MongoDB-backed sessions, messages, results, assessments, and plans
-- fallback chat support when Gemini is unavailable

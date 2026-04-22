@@ -74,12 +74,16 @@ def test_submit_assessment_saves_assessment_and_returns_plan(monkeypatch):
 
     assert "assessmentId" in result
     assert result["addictionResult"]["resultId"]
+    assert result["addictionResult"]["topTriggers"]
+    assert result["addictionResult"]["recommendations"]
     assert result["dependenceResult"]["resultId"]
     assert result["plan"]["assessmentId"] == result["assessmentId"]
+    assert result["plan"]["topTriggers"]
 
     saved_assessment = db.assessments.find_one({"_id": ObjectId(result["assessmentId"])})
     assert saved_assessment is not None
     assert saved_assessment["answers"]["Age"] == "20"
+    assert saved_assessment["triggerAnalysis"]["topTriggers"]
     assert saved_assessment["addictionResult"]["resultId"] == result["addictionResult"]["resultId"]
 
     cleanup_user_data(email=email, user_id=user_id)

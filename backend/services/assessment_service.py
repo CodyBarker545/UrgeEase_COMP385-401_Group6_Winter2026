@@ -9,6 +9,7 @@ from db.mongo import get_db
 from services.model_service import ModelService
 from services.plan_service import PlanService
 from services.result_service import ResultService
+from services.trigger_service import TriggerService
 
 
 class AssessmentService:
@@ -16,6 +17,7 @@ class AssessmentService:
         self.model_service = ModelService()
         self.result_service = ResultService()
         self.plan_service = PlanService()
+        self.trigger_service = TriggerService()
 
     @staticmethod
     def _build_answers(payload: dict[str, Any]) -> dict[str, Any]:
@@ -30,14 +32,22 @@ class AssessmentService:
 
         addiction_result = self.model_service.predict_addiction_score(payload)
         dependence_result = self.model_service.predict_dependence_risk(payload)
+        answers = self._build_answers(payload)
+        trigger_analysis = self.trigger_service.analyze(answers)
+        enriched_payload = {
+            **payload,
+            **trigger_analysis,
+        }
 
         assessment_doc = {
             "userId": ObjectId(str(payload["userId"]).strip()),
             "sessionId": ObjectId(str(payload["sessionId"]).strip()),
             "submittedAt": datetime.now(UTC),
-            "answers": self._build_answers(payload),
+            "answers": answers,
+            "triggerAnalysis": trigger_analysis,
             "addictionResult": {
                 **addiction_result,
+                **trigger_analysis,
             },
             "dependenceResult": {
                 **dependence_result,
@@ -48,7 +58,7 @@ class AssessmentService:
         assessment_id = str(inserted.inserted_id)
 
         addiction_result_id = self.result_service.save_addiction_result(
-            payload,
+            enriched_payload,
             addiction_result,
             assessment_id=assessment_id,
         )
@@ -72,8 +82,8 @@ class AssessmentService:
             user_id=str(payload["userId"]).strip(),
             assessment_id=assessment_id,
             session_id=str(payload["sessionId"]).strip(),
-            answers=self._build_answers(payload),
-            latest_result=addiction_result,
+            answers=answers,
+            latest_result={**addiction_result, **trigger_analysis},
         )
 
         return {
@@ -81,6 +91,7 @@ class AssessmentService:
             "addictionResult": {
                 **addiction_result,
                 "resultId": addiction_result_id,
+                **trigger_analysis,
             },
             "dependenceResult": {
                 **dependence_result,

@@ -1,6 +1,6 @@
-﻿# Database Setup (MongoDB)
+# Database Setup (MongoDB)
 
-UrgeEase uses MongoDB to store users, sessions, messages, assessment submissions, model outputs, and recovery plans.
+UrgeEase uses MongoDB to store users, sessions, messages, assessment submissions, model outputs, recovery plans, trigger logs, and crisis resources.
 
 ## Overview
 
@@ -39,7 +39,10 @@ Create `backend/.env` with:
 MONGO_URI=your_mongodb_connection_string
 MONGO_DB_NAME=UrgeEase
 FLASK_ENV=development
-GEMINI_API_KEY=your_actual_key_here
+
+# Optional future hosted LLM mode:
+# CHAT_LLM_PROVIDER=gemini
+# GEMINI_API_KEY=your_actual_key_here
 ```
 
 ## Running the Setup Script
@@ -64,14 +67,7 @@ The script:
 - creates missing collections
 - creates the indexes the app expects
 
-It does not:
-
-- create demo users
-- insert assessment data
-- insert chat messages
-- insert result history
-
-That application data is created through the API.
+It does not create demo users, insert assessment data, insert chat messages, or insert result history. That application data is created through the API.
 
 ## Collection Responsibilities
 
@@ -81,7 +77,7 @@ Stores account-level information such as email, password hash, profile data, and
 
 ### `sessions`
 
-Stores chat or voice session metadata.
+Stores chat session metadata. Voice is currently a frontend placeholder for future work.
 
 ### `messages`
 
@@ -96,6 +92,7 @@ Each result can include:
 - `userId`
 - `sessionId`
 - `assessmentId`
+- `resultType`
 - `generatedAt`
 - `modelName`
 - `addictionScore`
@@ -117,8 +114,9 @@ Each assessment includes:
 - `answers`
 - `addictionResult`
 - `dependenceResult`
+- `topTriggers`
 
-The embedded result summaries include the linked `resultId` values after the result records are saved.
+The embedded result summaries include linked `resultId` values after the result records are saved.
 
 ### `plans`
 

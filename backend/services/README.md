@@ -1,15 +1,8 @@
-﻿# Services Folder
+# Services Folder
 
 This folder contains the backend business logic for UrgeEase.
 
-The route files call these services to perform application work such as:
-
-- authentication
-- session and message persistence
-- model inference
-- assessment submission
-- recovery plan creation
-- chat generation
+The route files call these services to perform application work such as authentication, session persistence, model inference, assessment submission, recovery plan creation, result analytics, trigger analysis, and chat generation.
 
 ## Files
 
@@ -66,21 +59,24 @@ This service stores both user and assistant chat turns in the `messages` collect
 
 ### `result_service.py`
 
-Handles storing and retrieving model outputs.
+Handles storing, retrieving, and analyzing model outputs.
 
 Responsibilities:
 
 - save addiction score results
 - save dependence risk results
+- tag results by `resultType`
 - fetch all results for a user
-- fetch the latest result
+- fetch the latest addiction result for dashboard and chat use
 - fetch a result by ID
+- build analytics across previous results
 
 Current behavior:
 
 - validates `userId`, `sessionId`, and `resultId`
 - stores outputs with linked `userId`, `sessionId`, and `assessmentId`
 - supports result history for dashboards, trends, and chat context
+- summarizes score trends, dependence trends, recurring triggers, and improvement status
 
 ### `assessment_service.py`
 
@@ -92,10 +88,21 @@ Responsibilities:
 - run both Random Forest models
 - store the raw questionnaire in `assessments`
 - save both model outputs through `ResultService`
+- analyze top triggers through `TriggerService`
 - link result records back to the assessment using `assessmentId`
 - create a new recovery plan through `PlanService`
 
 This service is the main backend entry point for assessment submissions from the frontend.
+
+### `trigger_service.py`
+
+Analyzes assessment answers to identify likely struggle areas.
+
+Responsibilities:
+
+- score possible triggers from assessment inputs
+- return top triggers with short explanations
+- provide recommendation text for results, plans, analytics, and chat context
 
 ### `plan_service.py`
 
@@ -104,6 +111,7 @@ Handles recovery plan generation and updates.
 Responsibilities:
 
 - choose the primary focus area from the most recent assessment
+- use trigger analysis when available
 - create a new active plan with summary, goals, and actions
 - archive older active plans for the same user
 - fetch the current active plan
@@ -118,13 +126,14 @@ Current plan focus areas include:
 
 ### `llm_service.py`
 
-Handles shared access to the Gemini-backed RAG chain.
+Handles shared access to the RAG chain.
 
 Responsibilities:
 
-- load Gemini configuration from environment variables
+- use local chatbot mode by default
+- keep Gemini available as an optional future provider
 - build or reuse the FAISS-backed RAG chain
-- send prompts to Gemini
+- send prompts to the active chat provider
 - return retrieved-answer output to the chat service
 
 This service caches one chain instance so the backend does not rebuild the RAG pipeline on every request.
@@ -140,8 +149,8 @@ Responsibilities:
 - build a short progress summary for prompt context
 - load the user's active recovery plan
 - guide responses toward the highest-risk assessment area and pending plan actions
-- call the Gemini-backed RAG pipeline
-- fall back to a shorter demo response if Gemini fails
+- call the local RAG pipeline by default
+- keep replies brief, natural, and practical
 - save both the user message and the assistant reply
 
 This service powers the application's main session-based support conversation.

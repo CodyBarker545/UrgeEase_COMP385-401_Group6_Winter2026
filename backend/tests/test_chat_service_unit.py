@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 
 import pytest
 
@@ -86,3 +87,95 @@ def test_save_chat_turn_persists_both_user_and_assistant_messages(monkeypatch):
     assert len(captured) == 2
     assert captured[0][1]["role"] == "user"
     assert captured[1][1]["role"] == "assistant"
+
+
+def test_generate_response_falls_back_when_llm_times_out(monkeypatch):
+    service = ChatService()
+
+    monkeypatch.setenv("CHAT_LLM_TIMEOUT_SECONDS", "0.01")
+    monkeypatch.setattr(
+        service,
+        "_get_results_for_chat_context",
+        lambda session_id, user_id: ([], user_id),
+    )
+    monkeypatch.setattr(service, "_build_chat_history", lambda session_id: [])
+    monkeypatch.setattr(service.plan_service, "get_active_plan", lambda user_id: None)
+
+    class SlowLLM:
+        def generate_reply(self, question, chat_history=None):
+            time.sleep(1)
+            return {"result": "too late", "crisis": False, "source_documents": []}
+
+    monkeypatch.setattr("services.chat_service.get_llm_service", lambda: SlowLLM())
+
+    started = time.perf_counter()
+    result = service.generate_initial_or_followup_response(
+        session_id="session-1",
+        user_id="user-1",
+        user_message="hello",
+    )
+    elapsed = time.perf_counter() - started
+
+    assert elapsed < 0.5
+    assert result["fallbackUsed"] is True
+    assert result["sources"] == ["demo-fallback"]
+    assert "timed out" in result["fallbackReason"]
+
+
+def test_polish_assistant_response_removes_section_headings_and_sources():
+    raw = (
+        "1) Supportive response\n"
+        "It makes sense that late-night scrolling feels hard to stop.\n\n"
+        "2) Practical next steps\n"
+        "- Put the phone across the room for 10 minutes.\n"
+        "- Try one slow breathing minute before checking again.\n\n"
+        "3) Sources used\n"
+        "sleep_and_routine/sleep.txt"
+    )
+
+    polished = ChatService._polish_assistant_response(raw)
+
+    assert "Supportive response" not in polished
+    assert "Practical next steps" not in polished
+    assert "Sources used" not in polished
+    assert "sleep_and_routine" not in polished
+    assert "Put the phone across the room" in polished
+
+
+def test_polish_assistant_response_caps_long_replies():
+    raw = (
+        "First sentence. Second sentence. Third sentence. Fourth sentence. "
+        "Fifth sentence that should be removed."
+    )
+
+    polished = ChatService._polish_assistant_response(raw)
+
+    assert "Fifth sentence" not in polished
+    assert polished.endswith("Fourth sentence.")
+
+
+def test_llm_service_defaults_to_local_without_gemini_key(monkeypatch):
+    from services import llm_service
+
+    llm_service.get_llm_service.cache_clear()
+    monkeypatch.delenv("CHAT_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    captured: dict[str, object] = {}
+
+    class FakeRAGChain:
+        def __init__(self, cfg, embeddings, llm_fn):
+            captured["llm_fn"] = llm_fn
+
+        def invoke(self, question, chat_history=None):
+            return {"result": "local response", "crisis": False, "source_documents": []}
+
+    monkeypatch.setattr(llm_service, "UrgeEaseRAGChain", FakeRAGChain)
+
+    service = llm_service.LLMService()
+
+    assert service.provider == "local"
+    assert service.client is None
+    assert captured["llm_fn"] is llm_service.local_chat_llm
+
+    llm_service.get_llm_service.cache_clear()

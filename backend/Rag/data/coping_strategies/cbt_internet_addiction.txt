@@ -1,6 +1,7 @@
 Title: Cognitive Behavioral Therapy for Internet Addiction (CBT-IA)
 Source: Young (2013) - Treatment outcomes using CBT-IA
 Category: coping_strategies
+Reference Link: https://pmc.ncbi.nlm.nih.gov/articles/PMC4154573/
 
 ------------------------------------------------------------
 SUMMARY

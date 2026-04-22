@@ -39,9 +39,12 @@ def test_submit_assessment_returns_results_and_plan(client):
     assert "addictionResult" in data
     assert "dependenceResult" in data
     assert "resultId" in data["addictionResult"]
+    assert data["addictionResult"]["topTriggers"]
+    assert data["addictionResult"]["recommendations"]
     assert "resultId" in data["dependenceResult"]
     assert data["plan"]["userId"] == user_id
     assert data["plan"]["assessmentId"] == data["assessmentId"]
+    assert data["plan"]["topTriggers"]
 
     db = get_db()
     saved_assessment = db.assessments.find_one({"_id": db.assessments.find_one(sort=[("_id", -1)])["_id"]})

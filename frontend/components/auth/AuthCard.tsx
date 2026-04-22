@@ -62,7 +62,7 @@ export function AuthHeader({
           className="text-xs font-medium uppercase tracking-[0.2em]"
           style={{ color: 'var(--color-text-muted)' }}
         >
-          Private support, chat or voice
+          Private chat support
         </p>
         <h1 
           className="text-xl font-semibold tracking-tight"

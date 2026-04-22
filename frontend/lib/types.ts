@@ -33,6 +33,7 @@ export interface ResultsSummary {
   addictions: AddictionSummary[]
   unlocked: boolean
   activePlan?: RecoveryPlan | null
+  analytics?: ResultsAnalytics | null
 }
 
 export interface AddictionSummary {
@@ -48,6 +49,35 @@ export interface AddictionDetail {
   confidence: number
   triggers: TriggerCategory[]
   evidence: EvidenceExcerpt[]
+}
+
+export interface AnalyticsTimelineItem {
+  assessmentNumber: number
+  assessmentId: string | null
+  resultId: string | null
+  generatedAt: string | null
+  addictionScore: number | null
+  addictionRiskLevel: string | null
+  dependenceClass: number | null
+  dependenceRiskLevel: string | null
+  topTriggers: string[]
+  recommendations: string[]
+}
+
+export interface RecurringTrigger {
+  trigger: string
+  count: number
+}
+
+export interface ResultsAnalytics {
+  assessmentCount: number
+  latest: AnalyticsTimelineItem | null
+  previous: AnalyticsTimelineItem | null
+  scoreChange: number | null
+  trend: 'improved' | 'worsened' | 'unchanged' | 'unknown'
+  summary: string
+  recurringTriggers: RecurringTrigger[]
+  timeline: AnalyticsTimelineItem[]
 }
 
 export interface TriggerCategory {

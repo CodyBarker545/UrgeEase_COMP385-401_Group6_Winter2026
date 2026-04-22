@@ -24,7 +24,9 @@ export default function SignInPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const login = useAuthStore((state) => state.login)
+  const logout = useAuthStore((state) => state.logout)
   const token = useAuthStore((state) => state.token)
+  const user = useAuthStore((state) => state.user)
 
   const {
     register,
@@ -49,11 +51,7 @@ export default function SignInPage() {
     if (msg) {
       setError('root', { message: msg })
     }
-
-    if (token) {
-      router.push('/app/home')
-    }
-  }, [token, router, searchParams, setError, setValue])
+  }, [searchParams, setError, setValue])
 
   const onSubmit = async (values: SignInValues) => {
     const result = await apiSignIn({ email: values.email, password: values.password })
@@ -67,11 +65,51 @@ export default function SignInPage() {
     router.push('/app/home')
   }
 
+  const handleSignOut = () => {
+    logout()
+    router.refresh()
+  }
+
+  if (token) {
+    return (
+      <AuthCard>
+        <AuthHeader
+          title="You're already signed in"
+          subtitle={user?.email ? `Currently signed in as ${user.email}.` : 'You have an active session.'}
+        />
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => router.push('/app/home')}
+            className="w-full rounded-full px-6 py-3 text-sm font-medium transition-all"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              color: 'var(--color-text-light)',
+            }}
+          >
+            Continue to app
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="w-full rounded-full border px-6 py-3 text-sm font-medium transition-all"
+            style={{
+              borderColor: 'rgba(227, 155, 99, 0.35)',
+              color: 'var(--color-text-dark)',
+            }}
+          >
+            Sign out and use another account
+          </button>
+        </div>
+      </AuthCard>
+    )
+  }
+
   return (
     <AuthCard>
       <AuthHeader
         title="Sign in to continue"
-        subtitle="Pick up where you left off with chat or voice."
+        subtitle="Pick up where you left off with private chat support."
       />
       <form
         onSubmit={handleSubmit(onSubmit)}

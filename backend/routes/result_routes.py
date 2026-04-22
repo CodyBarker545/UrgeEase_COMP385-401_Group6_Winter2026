@@ -32,6 +32,17 @@ def get_latest_result(user_id: str):
         return jsonify({"error": f"Fetch latest result failed: {exc}"}), 500
 
 
+@result_bp.get("/results/analytics/<user_id>")
+def get_user_analytics(user_id: str):
+    try:
+        analytics = result_service.get_user_analytics(user_id)
+        return jsonify(analytics), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Fetch analytics failed: {exc}"}), 500
+
+
 @result_bp.get("/results/<result_id>")
 def get_result_by_id(result_id: str):
     try:

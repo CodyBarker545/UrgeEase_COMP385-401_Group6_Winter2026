@@ -5,22 +5,30 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
-from google import genai
-
-from Rag.rag_chain import HashEmbeddings, RAGConfig, UrgeEaseRAGChain
+from Rag.rag_chain import HashEmbeddings, RAGConfig, UrgeEaseRAGChain, local_chat_llm
 
 
 class LLMService:
     def __init__(self) -> None:
-        # read gemini config from env
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise RuntimeError("Missing GEMINI_API_KEY in .env")
-
-        self.client = genai.Client(api_key=api_key)
+        self.provider = os.getenv("CHAT_LLM_PROVIDER", "local").strip().lower()
+        self.client = None
         self.model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-        # point rag at local data and index folders
+        # Default demo mode is fully local. Set CHAT_LLM_PROVIDER=gemini later
+        # if the project needs hosted generation.
+        llm_fn = local_chat_llm
+
+        if self.provider == "gemini":
+            from google import genai
+
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                raise RuntimeError("Missing GEMINI_API_KEY in .env")
+
+            self.client = genai.Client(api_key=api_key)
+            llm_fn = self._generate_from_prompt
+
+        # Point RAG at the local knowledge files and generated FAISS index.
         base_dir = Path(__file__).resolve().parents[1]
         data_dir = base_dir / "Rag" / "data"
         index_dir = base_dir / "Rag" / "vectorstore"
@@ -32,11 +40,10 @@ class LLMService:
             use_mmr=True,
         )
 
-        # use gemini for generation
         self.chain = UrgeEaseRAGChain(
             cfg=cfg,
             embeddings=HashEmbeddings(),
-            llm_fn=self._generate_from_prompt,
+            llm_fn=llm_fn,
         )
 
     def _extract_text(self, response: Any) -> str:
@@ -63,7 +70,9 @@ class LLMService:
         raise RuntimeError("Gemini returned an empty response")
 
     def _generate_from_prompt(self, prompt: str) -> str:
-        # send the final prompt to gemini
+        if self.client is None:
+            raise RuntimeError("Gemini client is not configured")
+
         response = self.client.models.generate_content(
             model=self.model,
             contents=prompt,
@@ -75,7 +84,7 @@ class LLMService:
         question: str,
         chat_history: Optional[list[dict[str, str]]] = None,
     ) -> dict[str, Any]:
-        # run rag + generation
+        # Run retrieval first, then generate a short coaching response.
         return self.chain.invoke(question, chat_history=chat_history or [])
 
 
