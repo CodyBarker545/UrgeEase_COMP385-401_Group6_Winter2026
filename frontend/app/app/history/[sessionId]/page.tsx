@@ -6,6 +6,7 @@ import { ArrowLeft, MessageSquare, Mic } from 'lucide-react'
 import { getSessionMessages } from '@/frontend/lib/api'
 import type { Message } from '@/frontend/lib/types'
 
+// Shows messages from one session.
 export default function SessionHistoryPage() {
   const params = useParams()
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function SessionHistoryPage() {
 
   useEffect(() => {
     if (!sessionId) return
+    // Loads messages for the current session.
     async function loadMessages() {
       const data = await getSessionMessages(sessionId)
       setMessages(data)

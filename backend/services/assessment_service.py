@@ -13,12 +13,14 @@ from services.trigger_service import TriggerService
 
 
 class AssessmentService:
+    # Sets up the service with the helpers it needs.
     def __init__(self) -> None:
         self.model_service = ModelService()
         self.result_service = ResultService()
         self.plan_service = PlanService()
         self.trigger_service = TriggerService()
 
+    # Removes ids and keeps only the assessment answers.
     @staticmethod
     def _build_answers(payload: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -27,6 +29,7 @@ class AssessmentService:
             if key not in {"userId", "sessionId"}
         }
 
+    # Handles assessment submission and returns the results.
     def submit_assessment(self, payload: dict[str, Any]) -> dict[str, Any]:
         db = get_db()
 

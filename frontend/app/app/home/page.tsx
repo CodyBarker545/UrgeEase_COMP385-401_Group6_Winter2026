@@ -6,6 +6,7 @@ import { MessageSquare, BarChart3, History as HistoryIcon, ClipboardList } from 
 import { createSession, getResults } from '@/frontend/lib/api'
 import { useRouter } from 'next/navigation'
 
+// Shows the signed-in home page.
 export default function HomePage() {
   const router = useRouter()
   const [sessionsCompleted, setSessionsCompleted] = useState(0)
@@ -13,6 +14,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Loads the data needed for this page.
     async function loadData() {
       const results = await getResults()
       setSessionsCompleted(results.sessionsCompleted)
@@ -22,6 +24,7 @@ export default function HomePage() {
     loadData()
   }, [])
 
+  // Handles handle start session.
   const handleStartSession = async (mode: 'chat' | 'voice') => {
     const { sessionId } = await createSession({ mode })
     router.push(`/app/session/${mode}?sessionId=${sessionId}`)

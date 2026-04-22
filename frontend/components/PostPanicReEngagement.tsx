@@ -10,12 +10,14 @@ interface PostPanicReEngagementProps {
   onDismiss: () => void
 }
 
+// Shows the follow-up after panic support.
 export default function PostPanicReEngagement({ userId, onDismiss }: PostPanicReEngagementProps) {
   const router = useRouter()
   const [showToast, setShowToast] = useState(false)
   const [hasShown, setHasShown] = useState(false)
 
   useEffect(() => {
+    // Handles check and show.
     const checkAndShow = async () => {
       if (!userId || hasShown) return
 
@@ -45,12 +47,14 @@ export default function PostPanicReEngagement({ userId, onDismiss }: PostPanicRe
     return () => clearTimeout(timer)
   }, [userId, hasShown])
 
+  // Starts a follow-up chat.
   const handleStartChat = () => {
     setShowToast(false)
     setHasShown(true)
     router.push('/chat-onboarding')
   }
 
+  // Dismisses the follow-up prompt.
   const handleDismiss = () => {
     setShowToast(false)
     setHasShown(true)

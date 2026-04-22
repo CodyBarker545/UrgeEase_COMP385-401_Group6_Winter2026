@@ -11,6 +11,7 @@ interface AppShellProps {
   children: React.ReactNode
 }
 
+// Shows the signed-in app shell.
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname()
   const user = useAuthStore((state) => state.user)
@@ -26,6 +27,7 @@ export function AppShell({ children }: AppShellProps) {
     { href: '/app/settings', label: 'Settings', icon: Settings },
   ]
 
+  // Checks whether a navigation link is active.
   const isActive = (href: string) => {
     if (href === '/app/home') return pathname === '/app/home' || pathname === '/app'
     return pathname.startsWith(href)

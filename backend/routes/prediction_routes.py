@@ -46,6 +46,7 @@ USERS_REQUIRED_FIELDS = [
 ]
 
 
+# Predicts the addiction score from the request data.
 @prediction_bp.post("/predict/addiction-score")
 def predict_addiction_score():
     payload = request.get_json(silent=True)
@@ -70,6 +71,7 @@ def predict_addiction_score():
         return jsonify({"error": f"Prediction failed: {exc}"}), 500
 
 
+# Predicts the dependence risk from the request data.
 @prediction_bp.post("/predict/dependence-risk")
 def predict_dependence_risk():
     payload = request.get_json(silent=True)

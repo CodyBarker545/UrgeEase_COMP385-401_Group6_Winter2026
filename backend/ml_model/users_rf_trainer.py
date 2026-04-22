@@ -7,6 +7,7 @@ from base_trainer import BaseRandomForestTrainer
 
 
 class SocialMediaUsersTrainer(BaseRandomForestTrainer):
+    # Maps a score to a dependence risk class.
     def map_dependence_risk(self, score: float) -> int:
         if score < 2.5:
             return 0
@@ -15,12 +16,14 @@ class SocialMediaUsersTrainer(BaseRandomForestTrainer):
         else:
             return 2
 
+    # Counts how many platforms are listed.
     @staticmethod
     def count_platforms(value: str) -> int:
         if pd.isna(value):
             return 0
         return len([p.strip() for p in str(value).split(",") if p.strip()])
 
+    # Loads data and prepares features and labels.
     def load_and_prepare_data(self) -> tuple[pd.DataFrame, pd.Series]:
         df = pd.read_csv(self.data_file)
 

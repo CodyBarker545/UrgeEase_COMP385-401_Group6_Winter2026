@@ -16,6 +16,7 @@ from services.session_service import SessionService
 
 
 class ChatService:
+    # Sets up the service with the helpers it needs.
     def __init__(self) -> None:
         # setup services
         self.message_service = MessageService()
@@ -23,6 +24,7 @@ class ChatService:
         self.result_service = ResultService()
         self.session_service = SessionService()
 
+    # Gets the chat timeout setting.
     @staticmethod
     def _llm_timeout_seconds() -> float:
         try:
@@ -30,6 +32,7 @@ class ChatService:
         except ValueError:
             return 8.0
 
+    # Generates an assistant reply with a timeout.
     @classmethod
     def _generate_reply_with_timeout(
         cls,
@@ -57,6 +60,7 @@ class ChatService:
             if future.done():
                 executor.shutdown(wait=False)
 
+    # Builds a short results summary for the chat prompt.
     @staticmethod
     def _format_results_context(
         latest_result: dict[str, Any] | None,
@@ -107,6 +111,7 @@ class ChatService:
 
         return "\n".join(lines)
 
+    # Builds recent chat history for the assistant.
     def _build_chat_history(
         self,
         session_id: str,
@@ -127,6 +132,7 @@ class ChatService:
 
         return history
 
+    # Finds the right user results for chat context.
     def _get_results_for_chat_context(
         self,
         session_id: str,
@@ -148,6 +154,7 @@ class ChatService:
 
         return previous_results, normalized_user_id
 
+    # Formats a date for display in chat.
     @staticmethod
     def _format_display_date(raw_date: str | None) -> str:
         if not raw_date:
@@ -159,6 +166,7 @@ class ChatService:
         except ValueError:
             return raw_date
 
+    # Describes whether a value improved, worsened, or stayed the same.
     @staticmethod
     def _classify_change(latest_value: int | None, previous_value: int | None) -> str:
         if latest_value is None or previous_value is None:
@@ -169,6 +177,7 @@ class ChatService:
             return "worsened"
         return "unchanged"
 
+    # Builds a short progress summary from assessment history.
     @classmethod
     def _build_progress_summary(
         cls,
@@ -253,6 +262,7 @@ class ChatService:
 
         return "\n".join(lines)
 
+    # Finds the main focus areas from the latest result.
     @staticmethod
     def _extract_focus_areas(latest_result: dict[str, Any] | None) -> str:
         if not latest_result:
@@ -278,12 +288,14 @@ class ChatService:
         )
         return "\n".join(lines)
 
+    # Gets the active plan for chat context.
     def _get_active_plan_for_chat_context(self, user_id: str) -> dict[str, Any] | None:
         try:
             return self.plan_service.get_active_plan(user_id)
         except Exception:
             return None
 
+    # Formats the active plan for the chat prompt.
     @staticmethod
     def _format_plan_context(active_plan: dict[str, Any] | None) -> str:
         if not active_plan:
@@ -324,6 +336,7 @@ class ChatService:
         )
         return "\n".join(lines)
 
+    # Checks whether the message may be about a crisis.
     @staticmethod
     def _detect_crisis(text: str | None) -> bool:
         if not text:
@@ -340,6 +353,7 @@ class ChatService:
         ]
         return any(term in lowered for term in crisis_terms)
 
+    # Cleans up the assistant response before sending it.
     @staticmethod
     def _polish_assistant_response(response: str) -> str:
         if not response:
@@ -379,6 +393,7 @@ class ChatService:
         polished = re.sub(r"\s+", " ", polished).strip()
         return limit_sentences(polished or response.strip())
 
+    # Builds a local fallback reply when the LLM is unavailable.
     @classmethod
     def _build_demo_fallback_response(
         cls,
@@ -451,6 +466,7 @@ class ChatService:
 
         return f"{opener}{risk_line}{progress_line}{plan_line} {prompt}{history_line}".strip()
 
+    # Generates the assistant response for a chat turn.
     def generate_initial_or_followup_response(
         self,
         session_id: str,
@@ -551,6 +567,7 @@ class ChatService:
                 "fallbackReason": str(exc),
             }
 
+    # Saves the user message and assistant reply.
     def save_chat_turn(
         self,
         session_id: str,

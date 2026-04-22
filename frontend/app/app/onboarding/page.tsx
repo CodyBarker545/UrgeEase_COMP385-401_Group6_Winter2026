@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MessageSquare, Mic, Video, Check } from 'lucide-react'
 import { useOnboardingStore } from '@/frontend/lib/store'
 
+// Shows the onboarding flow.
 export default function OnboardingPage() {
   const router = useRouter()
   const completeOnboarding = useOnboardingStore((state) => state.completeOnboarding)
@@ -12,6 +13,7 @@ export default function OnboardingPage() {
   const [preferredMode, setPreferredMode] = useState<'chat' | null>(null)
   const [tone, setTone] = useState<'calm' | 'direct' | null>(null)
 
+  // Marks onboarding as finished.
   const handleFinish = () => {
     if (preferredMode && tone) {
       completeOnboarding({ preferredMode, tone })

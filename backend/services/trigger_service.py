@@ -15,6 +15,7 @@ class TriggerSignal:
 class TriggerService:
     """Derive practical trigger patterns from assessment answers."""
 
+    # Converts a value to a float.
     @staticmethod
     def _to_float(raw_value: Any, default: float = 0.0) -> float:
         try:
@@ -22,10 +23,12 @@ class TriggerService:
         except (TypeError, ValueError):
             return default
 
+    # Checks whether an answer means yes.
     @staticmethod
     def _is_yes(raw_value: Any) -> bool:
         return str(raw_value).strip().lower() in {"yes", "true", "1"}
 
+    # Analyzes answers to find triggers and recommendations.
     @classmethod
     def analyze(cls, answers: dict[str, Any], *, max_triggers: int = 4) -> dict[str, list[str]]:
         signals = cls._build_signals(answers)
@@ -43,6 +46,7 @@ class TriggerService:
             "recommendations": [signal.recommendation for signal in selected],
         }
 
+    # Builds trigger signals from assessment answers.
     @classmethod
     def _build_signals(cls, answers: dict[str, Any]) -> list[TriggerSignal]:
         mindless_use = cls._to_float(answers.get("Mindless_Use"))

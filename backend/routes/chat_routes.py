@@ -11,6 +11,7 @@ chat_service = ChatService()
 CHAT_REQUIRED_FIELDS = ["userId"]
 
 
+# Sends a chat message to the assistant.
 @chat_bp.post("/sessions/<session_id>/chat")
 def chat_with_assistant(session_id: str):
     # generate and save one assistant turn

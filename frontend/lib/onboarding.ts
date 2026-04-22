@@ -71,6 +71,7 @@ const defaultState: OnboardingState = {
   triggerLogs: [],
 }
 
+// Safely parses onboarding state.
 function safeParse(value: string | null): OnboardingState {
   if (!value) {
     return defaultState
@@ -102,6 +103,7 @@ function safeParse(value: string | null): OnboardingState {
   }
 }
 
+// Reads onboarding state from storage.
 export function readOnboardingState(): OnboardingState {
   if (typeof window === 'undefined') {
     return defaultState
@@ -115,6 +117,7 @@ export function readOnboardingState(): OnboardingState {
   }
 }
 
+// Saves onboarding state to storage.
 export function saveOnboardingState(state: OnboardingState): OnboardingState {
   if (typeof window === 'undefined') {
     return state
@@ -132,6 +135,7 @@ export function saveOnboardingState(state: OnboardingState): OnboardingState {
   }
 }
 
+// Updates part of onboarding state.
 export function updateOnboardingState(partial: Partial<OnboardingState>): OnboardingState {
   const current = readOnboardingState()
   const merged: OnboardingState = {
@@ -153,6 +157,7 @@ export function updateOnboardingState(partial: Partial<OnboardingState>): Onboar
   return saveOnboardingState(merged)
 }
 
+// Adds a trigger log entry.
 export function appendTriggerLog(entry: TriggerLog): OnboardingState {
   const current = readOnboardingState()
   const next = {

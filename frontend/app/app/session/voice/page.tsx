@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Mic, MessageSquare } from 'lucide-react'
 
+// Shows the voice session page.
 export default function VoiceSessionPage() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('sessionId') || ''

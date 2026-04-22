@@ -6,12 +6,14 @@ import { Search, MessageSquare, Mic, Calendar } from 'lucide-react'
 import { getSessions } from '@/frontend/lib/api'
 import type { SessionSummary } from '@/frontend/lib/types'
 
+// Shows previous user sessions.
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<SessionSummary[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Loads the user session list.
     async function loadSessions() {
       const data = await getSessions()
       setSessions(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))

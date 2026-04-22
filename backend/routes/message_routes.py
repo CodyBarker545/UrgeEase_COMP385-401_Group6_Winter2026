@@ -11,6 +11,7 @@ message_service = MessageService()
 CREATE_MESSAGE_REQUIRED = ["userId", "role", "content"]
 
 
+# Adds a message to a session.
 @message_bp.post("/sessions/<session_id>/messages")
 def add_message(session_id: str):
     # store one message
@@ -33,6 +34,7 @@ def add_message(session_id: str):
         return jsonify({"error": f"Add message failed: {exc}"}), 500
 
 
+# Gets all messages for a session.
 @message_bp.get("/sessions/<session_id>/messages")
 def get_session_messages(session_id: str):
     # fetch session messages
@@ -43,6 +45,7 @@ def get_session_messages(session_id: str):
         return jsonify({"error": f"Fetch messages failed: {exc}"}), 500
 
 
+# Deletes a message by id.
 @message_bp.delete("/messages/<message_id>")
 def delete_message(message_id: str):
     # delete one message

@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 
+// Shows the main navigation bar.
 export default function Navbar() {
   const { user, signOut, loading } = useAuth()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const navRef = useRef<HTMLElement>(null)
   useEffect(() => {
+    // Closes the menu when clicking outside it.
     const handleClickOutside = (event: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false)
@@ -30,16 +32,19 @@ export default function Navbar() {
     }
   }, [isMobileMenuOpen])
 
+  // Handles handle sign out.
   const handleSignOut = async () => {
     await signOut()
     setIsMobileMenuOpen(false)
     router.push('/')
   }
 
+  // Opens or closes the mobile menu.
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
+  // Closes the mobile menu.
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
   }

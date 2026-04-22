@@ -60,6 +60,7 @@ const COLORS = {
 }
 
 
+// Runs the panic support flow.
 export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument, userId }: PanicFlowProps) {
   const [showReEngagement, setShowReEngagement] = useState(false)
   const [showCrisisMenu, setShowCrisisMenu] = useState(false)
@@ -111,6 +112,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
     }
   }, [isOpen])
 
+  // Resets all panic method state.
   const resetMethodStates = () => {
     setBreathCount(0)
     setColdWaterCountdown(EXERCISE.COLD_WATER_COUNTDOWN_SECONDS)
@@ -123,6 +125,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
     setVisualizationText('')
     setEnvironmentConfirm(false)
   }
+  // Starts the long press timer.
   const handlePressStart = useCallback(() => {
     setIsPressing(true)
     pressStartRef.current = Date.now()
@@ -144,6 +147,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
     pressTimerRef.current = interval as unknown as NodeJS.Timeout
   }, [])
 
+  // Stops the long press timer.
   const handlePressEnd = useCallback(() => {
     setIsPressing(false)
     if (pressTimerRef.current) {
@@ -155,6 +159,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
   }, [])
 
   
+  // Moves from SOS into the selected method.
   const activatePanicButton = () => {
     setStep('method')
     resetMethodStates()
@@ -162,6 +167,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
   }
 
   
+  // Sets up state for the selected panic method.
   const initializeMethod = () => {
     if (!selectedMethod) return
 
@@ -274,10 +280,12 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
     }
   }, [step, selectedMethod])
 
+  // Moves from the method step to logging.
   const handleMethodComplete = () => {
     setStep('log')
   }
 
+  // Saves the panic log and shows success.
   const handleLogSubmit = () => {
     try {
       appendTriggerLog({
@@ -299,10 +307,12 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
     }
   }
 
+  // Skips the log step and shows success.
   const handleSkipLog = () => {
     setStep('success')
   }
 
+  // Closes the flow after success.
   const handleSuccessClose = () => {
     onClose()
     setStep('sos')
@@ -312,12 +322,14 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
     }
   }
 
+  // Opens the crisis options menu.
   const handleCrisisMenuOpen = () => {
     setShowCrisisMenu(true)
     if (userId) {
     }
   }
 
+  // Leaves the app from the crisis menu.
   const handleExitApp = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.clear()
@@ -328,6 +340,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
       }
     }
   }
+  // Renders the SOS start button.
   const renderSOSButton = () => (
     <div style={{ 
       display: 'flex', 
@@ -415,6 +428,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
       )}
     </div>
   )
+  // Renders the selected panic method.
   const renderMethod = () => {
     if (!selectedMethod) return null
 
@@ -917,6 +931,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
         return null
     }
   }
+  // Renders the panic log form.
   const renderLog = () => (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
       <h3 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '16px', color: COLORS.text, textAlign: 'center' }}>
@@ -1088,6 +1103,7 @@ export default function PanicFlow({ isOpen, onClose, behaviorLabel, whyDocument,
       </div>
     </div>
   )
+  // Renders the success screen.
   const renderSuccess = () => (
     <div style={{ textAlign: 'center', padding: '20px' }}>
       <h3 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '16px', color: COLORS.text }}>

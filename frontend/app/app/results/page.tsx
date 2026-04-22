@@ -6,6 +6,7 @@ import { BarChart3, CalendarDays, ListChecks, Lock, Minus, TrendingDown, Trendin
 import { getResults } from '@/frontend/lib/api'
 import type { ResultsSummary } from '@/frontend/lib/types'
 
+// Formats a date for display.
 function formatDate(value: string | null) {
   if (!value) return 'Unknown date'
   return new Date(value).toLocaleDateString(undefined, {
@@ -15,23 +16,27 @@ function formatDate(value: string | null) {
   })
 }
 
+// Formats the score change text.
 function formatScoreChange(change: number | null) {
   if (change === null) return 'No comparison yet'
   if (change === 0) return 'No score change'
   return `${change > 0 ? '+' : ''}${change} from previous`
 }
 
+// Shows the icon for the result trend.
 function TrendIcon({ trend }: { trend: NonNullable<ResultsSummary['analytics']>['trend'] }) {
   if (trend === 'improved') return <TrendingDown className="h-5 w-5" style={{ color: '#22c55e' }} />
   if (trend === 'worsened') return <TrendingUp className="h-5 w-5" style={{ color: '#dc2626' }} />
   return <Minus className="h-5 w-5" style={{ color: 'var(--color-text-muted)' }} />
 }
 
+// Shows the user assessment results.
 export default function ResultsPage() {
   const [results, setResults] = useState<ResultsSummary | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Loads the user results summary.
     async function loadResults() {
       const data = await getResults()
       setResults(data)

@@ -98,6 +98,7 @@ ASSISTANT_BEHAVIOR_CONTRACT = """Assistant behavior:
 MAX_LOCAL_RESPONSE_SENTENCES = 4
 
 
+# Infers the content category from a source path.
 def infer_category(source_path: str) -> str:
     normalized = source_path.replace("\\", "/").lower()
     for category in CATEGORY_KEYWORDS:
@@ -106,6 +107,7 @@ def infer_category(source_path: str) -> str:
     return "general"
 
 
+# Infers the strategy type from a source path.
 def infer_strategy_type(source_path: str) -> str:
     normalized = source_path.replace("\\", "/").lower()
     if "cbt" in normalized:
@@ -121,6 +123,7 @@ def infer_strategy_type(source_path: str) -> str:
     return "psychoeducation"
 
 
+# Detects likely categories for a user query.
 def detect_query_categories(query: str) -> List[str]:
     lowered = query.lower()
     scored: list[tuple[int, str]] = []
@@ -134,6 +137,7 @@ def detect_query_categories(query: str) -> List[str]:
     return [category for _, category in scored[:2]]
 
 
+# Adds related terms to improve document search.
 def expand_query(query: str) -> str:
     categories = detect_query_categories(query)
     expansions = [QUERY_EXPANSIONS[category] for category in categories]
@@ -142,6 +146,7 @@ def expand_query(query: str) -> str:
     return f"{query}\n\nRelevant recovery topics: {' '.join(expansions)}"
 
 
+# Limits text to a small number of sentences.
 def limit_sentences(text: str, max_sentences: int = MAX_LOCAL_RESPONSE_SENTENCES) -> str:
     # Final guardrail so chat/voice output stays short in demo mode.
     sentences = re.findall(r"[^.!?]+[.!?]+|[^.!?]+$", text.strip())
@@ -155,9 +160,11 @@ class HashEmbeddings(Embeddings):
     deterministic offline embeddings for tests and local dev
     """
 
+    # Sets up the service with the helpers it needs.
     def __init__(self, dim: int = 128):
         self.dim = dim
 
+    # Creates a simple hash embedding for text.
     def _embed(self, text: str) -> List[float]:
         # hash tokens into a fixed vector
         tokens = re.findall(r"[a-z0-9']+", text.lower())
@@ -174,9 +181,11 @@ class HashEmbeddings(Embeddings):
 
         return vec
 
+    # Embeds a list of documents.
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return [self._embed(t) for t in texts]
 
+    # Embeds one search query.
     def embed_query(self, text: str) -> List[float]:
         return self._embed(text)
 
@@ -195,6 +204,7 @@ CRISIS_KEYWORDS = [
 ]
 
 
+# Checks whether text contains crisis language.
 def is_crisis(text: str) -> bool:
     t = text.lower()
     return any(k in t for k in CRISIS_KEYWORDS)
@@ -231,6 +241,7 @@ class RAGConfig:
     use_mmr: bool = True
 
 
+# Builds a hash for the RAG data directory.
 def _compute_dir_hash(data_dir: str) -> str:
     # hash all txt files recursively
     md5 = hashlib.md5()
@@ -250,6 +261,7 @@ def _compute_dir_hash(data_dir: str) -> str:
     return md5.hexdigest()
 
 
+# Builds or loads the RAG vector store.
 def build_or_load_vectorstore(
     cfg: RAGConfig,
     embeddings: Embeddings,
@@ -330,6 +342,7 @@ def format_history(history: List[Dict[str, str]]) -> str:
     return "\n".join(out)
 
 
+# Builds the prompt sent to the chat model.
 def build_prompt(chat_history: str, context: str, query: str) -> str:
     return f"""You are UrgeEase, a supportive recovery assistant for behavioral addictions.
 You are NOT a licensed therapist. Do NOT diagnose. Do NOT prescribe medication.
@@ -370,6 +383,7 @@ Respond as one concise chat message that follows the assistant behavior contract
 LLMFn = Callable[[str], str]
 
 
+# Extracts the latest user message from a prompt.
 def _prompt_user_message(prompt: str) -> str:
     match = re.search(r"User message:\s*(.+?)(?:\n\nRespond|\Z)", prompt, re.DOTALL)
     if not match:
@@ -379,6 +393,7 @@ def _prompt_user_message(prompt: str) -> str:
     return raw_message.split("\n\n", 1)[0].strip()
 
 
+# Finds category hints in the prompt.
 def _prompt_categories(prompt: str) -> list[str]:
     categories: list[str] = []
     for line in prompt.splitlines():
@@ -391,6 +406,7 @@ def _prompt_categories(prompt: str) -> list[str]:
     return [category for category in categories if not (category in seen or seen.add(category))]
 
 
+# Creates a local rule-based chat response.
 def local_chat_llm(prompt: str) -> str:
     """
     Local demo response generator.
@@ -446,6 +462,7 @@ def local_chat_llm(prompt: str) -> str:
     )
 
 
+# Returns a simple fake model response.
 def fake_llm(prompt: str) -> str:
     """
     Backward-compatible offline LLM stub for tests.
@@ -453,6 +470,7 @@ def fake_llm(prompt: str) -> str:
     return local_chat_llm(prompt)
 
 
+# Gets a response from Gemini when configured.
 def gemini_llm(prompt: str) -> str:
     """
     Real Gemini-backed LLM function.
@@ -488,6 +506,7 @@ def gemini_llm(prompt: str) -> str:
 
 # main rag chain
 class UrgeEaseRAGChain:
+    # Sets up the service with the helpers it needs.
     def __init__(
         self,
         cfg: RAGConfig,
@@ -508,6 +527,7 @@ class UrgeEaseRAGChain:
         else:
             self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": cfg.k})
 
+    # Runs the RAG chain for a user query.
     def invoke(
         self,
         question: str,

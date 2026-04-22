@@ -30,6 +30,7 @@ export const metadata: Metadata = {
   },
 }
 
+// Sets up the main page layout.
 export default function RootLayout({
   children,
 }: {

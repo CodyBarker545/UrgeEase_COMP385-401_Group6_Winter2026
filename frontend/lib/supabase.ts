@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getSupabaseUrl, getSupabaseAnonKey, getSupabaseServiceKey } from './env'
 
 
+// Creates a Supabase server client.
 export function createServerClient() {
   const supabaseUrl = getSupabaseUrl()
   const supabaseServiceKey = getSupabaseServiceKey()
@@ -15,6 +16,7 @@ export function createServerClient() {
 }
 
 
+// Creates a Supabase browser client.
 export function createClientSupabase() {
   const supabaseUrl = getSupabaseUrl()
   const supabaseAnonKey = getSupabaseAnonKey()

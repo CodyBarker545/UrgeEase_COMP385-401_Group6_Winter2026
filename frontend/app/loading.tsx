@@ -1,3 +1,4 @@
+// Shows the loading screen.
 export default function Loading() {
   return (
     <div style={{

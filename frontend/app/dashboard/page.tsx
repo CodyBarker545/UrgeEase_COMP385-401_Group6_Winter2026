@@ -9,6 +9,7 @@ import ChatOnboarding from '@/frontend/components/ChatOnboarding'
 import { OnboardingState, readOnboardingState } from '@/frontend/lib/onboarding'
 
 
+// Handles dashboard page.
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()

@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes'
 import { useAuthStore, usePreferencesStore } from '@/frontend/lib/store'
 import { exportData, deleteAccount } from '@/frontend/lib/api'
 
+// Shows account and app settings.
 export default function SettingsPage() {
   const router = useRouter()
   const { setTheme: applyTheme } = useTheme()
@@ -17,6 +18,7 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Handles handle export.
   const handleExport = async () => {
     setExporting(true)
     try {
@@ -29,6 +31,7 @@ export default function SettingsPage() {
     }
   }
 
+  // Handles handle delete.
   const handleDelete = async () => {
     setDeleting(true)
     try {
@@ -41,11 +44,13 @@ export default function SettingsPage() {
     }
   }
 
+  // Logs the user out.
   const handleLogout = () => {
     logout()
     router.push('/auth/sign-in')
   }
 
+  // Changes the saved theme setting.
   const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
     setThemePreference(theme)
     applyTheme(theme)

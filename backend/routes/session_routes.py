@@ -11,6 +11,7 @@ session_service = SessionService()
 CREATE_SESSION_REQUIRED = ["userId", "mode"]
 
 
+# Creates a new chat or voice session.
 @session_bp.post("/sessions")
 def create_session():
     payload = request.get_json(silent=True)
@@ -29,6 +30,7 @@ def create_session():
         return jsonify({"error": f"Create session failed: {exc}"}), 500
 
 
+# Gets all sessions for a user.
 @session_bp.get("/sessions/user/<user_id>")
 def get_user_sessions(user_id: str):
     try:
@@ -38,6 +40,7 @@ def get_user_sessions(user_id: str):
         return jsonify({"error": f"Fetch sessions failed: {exc}"}), 500
 
 
+# Gets details for one session.
 @session_bp.get("/sessions/detail/<session_id>")
 def get_session_detail(session_id: str):
     try:
@@ -49,6 +52,7 @@ def get_session_detail(session_id: str):
         return jsonify({"error": f"Fetch session failed: {exc}"}), 500
 
 
+# Marks a session as completed.
 @session_bp.patch("/sessions/<session_id>/complete")
 def complete_session(session_id: str):
     try:
@@ -60,6 +64,7 @@ def complete_session(session_id: str):
         return jsonify({"error": f"Complete session failed: {exc}"}), 500
 
 
+# Archives a session.
 @session_bp.patch("/sessions/<session_id>/archive")
 def archive_session(session_id: str):
     try:

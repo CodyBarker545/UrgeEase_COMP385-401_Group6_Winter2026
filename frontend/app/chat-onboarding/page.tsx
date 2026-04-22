@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClientSupabase } from '@/frontend/lib/supabase'
 import ChatOnboarding from '@/frontend/components/ChatOnboarding'
 
+// Handles chat onboarding page.
 export default function ChatOnboardingPage() {
   const { user, loading } = useAuth()
   const router = useRouter()

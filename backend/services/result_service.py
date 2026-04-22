@@ -17,6 +17,7 @@ class ResultService:
         "high": 3,
     }
 
+    # Cleans and checks an id string.
     @staticmethod
     def _normalize_id(raw_id: str, field_name: str) -> str:
         normalized = str(raw_id).strip()
@@ -24,6 +25,7 @@ class ResultService:
             raise ValueError(f"{field_name} is required")
         return normalized
 
+    # Converts a string id into a MongoDB ObjectId.
     @classmethod
     def _to_object_id(cls, raw_id: str, field_name: str) -> ObjectId:
         normalized = cls._normalize_id(raw_id, field_name)
@@ -32,6 +34,7 @@ class ResultService:
         except (InvalidId, TypeError) as exc:
             raise ValueError(f"Invalid {field_name}") from exc
 
+    # Builds a database query for a user id.
     @classmethod
     def _build_user_query(cls, user_id: str) -> dict[str, Any]:
         normalized = cls._normalize_id(user_id, "userId")
@@ -46,6 +49,7 @@ class ResultService:
 
         return {"$or": clauses}
 
+    # Figures out what type of result a record contains.
     @staticmethod
     def _infer_result_type(result: dict[str, Any]) -> str:
         result_type = result.get("resultType")
@@ -59,6 +63,7 @@ class ResultService:
             return "dependence"
         return "unknown"
 
+    # Converts a result document into API output.
     @staticmethod
     def _serialize_result(result: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -77,6 +82,7 @@ class ResultService:
             "recommendations": result.get("recommendations", []),
         }
 
+    # Builds a query for user results by type.
     @classmethod
     def _build_result_type_query(cls, user_id: str, result_type: str | None = None) -> dict[str, Any]:
         query = cls._build_user_query(user_id)
@@ -102,12 +108,14 @@ class ResultService:
             ]
         return query
 
+    # Converts risk text into a sortable rank.
     @classmethod
     def _risk_rank(cls, risk_level: Any) -> int | None:
         if risk_level is None:
             return None
         return cls.RISK_RANK.get(str(risk_level).strip().lower())
 
+    # Describes how a number changed between results.
     @staticmethod
     def _classify_numeric_change(latest: int | float | None, previous: int | float | None) -> str:
         if latest is None or previous is None:
@@ -118,10 +126,12 @@ class ResultService:
             return "worsened"
         return "unchanged"
 
+    # Describes how risk changed between results.
     @classmethod
     def _classify_risk_change(cls, latest: Any, previous: Any) -> str:
         return cls._classify_numeric_change(cls._risk_rank(latest), cls._risk_rank(previous))
 
+    # Saves the addiction prediction result.
     @staticmethod
     def save_addiction_result(
         payload: dict[str, Any],
@@ -151,6 +161,7 @@ class ResultService:
         inserted = db.results.insert_one(doc)
         return str(inserted.inserted_id)
 
+    # Saves the dependence prediction result.
     @staticmethod
     def save_dependence_result(
         payload: dict[str, Any],
@@ -178,6 +189,7 @@ class ResultService:
         inserted = db.results.insert_one(doc)
         return str(inserted.inserted_id)
 
+    # Gets saved results for a user.
     @staticmethod
     def get_user_results(user_id: str, result_type: str | None = None) -> list[dict[str, Any]]:
         db = get_db()
@@ -192,6 +204,7 @@ class ResultService:
 
         return results
 
+    # Gets the most recent result for a user.
     @staticmethod
     def get_latest_result(user_id: str) -> dict[str, Any] | None:
         db = get_db()
@@ -207,6 +220,7 @@ class ResultService:
 
         return ResultService._serialize_result(res)
 
+    # Gets one result by id.
     @staticmethod
     def get_result_by_id(result_id: str) -> dict[str, Any] | None:
         db = get_db()
@@ -217,6 +231,7 @@ class ResultService:
 
         return ResultService._serialize_result(res)
 
+    # Gets result analytics for a user.
     @staticmethod
     def get_user_analytics(user_id: str) -> dict[str, Any]:
         addiction_results = list(reversed(ResultService.get_user_results(user_id, result_type="addiction")))

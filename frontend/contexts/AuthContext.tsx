@@ -17,6 +17,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Provides auth state to the app.
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -164,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+// Returns the current auth context.
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {

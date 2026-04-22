@@ -10,6 +10,7 @@ from pymongo.database import Database
 load_dotenv()
 
 
+# Returns the shared MongoDB client.
 @lru_cache(maxsize=1)
 def get_client() -> MongoClient:
     mongo_uri = os.getenv("MONGO_URI")
@@ -18,11 +19,13 @@ def get_client() -> MongoClient:
     return MongoClient(mongo_uri)
 
 
+# Returns the MongoDB database for the app.
 def get_db() -> Database:
     db_name = os.getenv("MONGO_DB_NAME", "UrgeEase")
     return get_client()[db_name]
 
 
+# Checks if MongoDB is reachable.
 def ping_db() -> bool:
     try:
         get_client().admin.command("ping")

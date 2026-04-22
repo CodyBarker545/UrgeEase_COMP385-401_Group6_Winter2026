@@ -7,6 +7,7 @@ interface CrisisModalProps {
   onClose: () => void
 }
 
+// Shows crisis support actions in a modal.
 export function CrisisModal({ onClose }: CrisisModalProps) {
   const router = useRouter()
 

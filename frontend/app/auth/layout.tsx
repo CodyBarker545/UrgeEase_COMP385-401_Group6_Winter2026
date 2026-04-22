@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+// Handles auth layout.
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="auth-page flex min-h-screen items-center justify-center px-4 py-16" style={{ backgroundColor: 'var(--color-background)' }}>

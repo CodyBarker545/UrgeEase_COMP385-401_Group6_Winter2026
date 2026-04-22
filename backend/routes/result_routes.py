@@ -8,6 +8,7 @@ result_bp = Blueprint("result", __name__)
 result_service = ResultService()
 
 
+# Gets saved results for a user.
 @result_bp.get("/results/user/<user_id>")
 def get_user_results(user_id: str):
     try:
@@ -19,6 +20,7 @@ def get_user_results(user_id: str):
         return jsonify({"error": f"Fetch results failed: {exc}"}), 500
 
 
+# Gets the most recent result for a user.
 @result_bp.get("/results/latest/<user_id>")
 def get_latest_result(user_id: str):
     try:
@@ -32,6 +34,7 @@ def get_latest_result(user_id: str):
         return jsonify({"error": f"Fetch latest result failed: {exc}"}), 500
 
 
+# Gets result analytics for a user.
 @result_bp.get("/results/analytics/<user_id>")
 def get_user_analytics(user_id: str):
     try:
@@ -43,6 +46,7 @@ def get_user_analytics(user_id: str):
         return jsonify({"error": f"Fetch analytics failed: {exc}"}), 500
 
 
+# Gets one result by id.
 @result_bp.get("/results/<result_id>")
 def get_result_by_id(result_id: str):
     try:

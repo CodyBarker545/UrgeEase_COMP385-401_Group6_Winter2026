@@ -9,6 +9,7 @@ if __package__ in {None, ""}:
 from db.mongo import get_db
 
 
+# Creates the MongoDB collections used by the app.
 def create_collections() -> None:
     db = get_db()
     existing = db.list_collection_names()

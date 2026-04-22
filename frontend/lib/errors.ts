@@ -3,6 +3,7 @@
 import { ApiError } from './types'
 
 
+// Hides part of an email address.
 export function anonymizeEmail(email: string): string {
   if (!email || !email.includes('@')) {
     return '***@***'
@@ -16,6 +17,7 @@ export function anonymizeEmail(email: string): string {
 }
 
 
+// Turns an error into a user-friendly message.
 export function getUserFriendlyError(error: ApiError | Error | unknown): string {
   if (error && typeof error === 'object' && 'message' in error) {
     const apiError = error as ApiError
@@ -55,6 +57,7 @@ export function getUserFriendlyError(error: ApiError | Error | unknown): string 
 }
 
 
+// Logs an error with safe details.
 export function logError(context: string, error: unknown, additionalData?: Record<string, unknown>) {
   const errorMessage = error instanceof Error ? error.message : String(error)
   const errorStack = error instanceof Error ? error.stack : undefined

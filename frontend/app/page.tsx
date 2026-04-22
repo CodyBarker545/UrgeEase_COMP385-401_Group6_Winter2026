@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 
+// Shows the public home page.
 export default function Home() {
   return (
     <>

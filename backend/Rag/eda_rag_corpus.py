@@ -6,6 +6,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
+# Runs this script from the command line.
 def main() -> None:
     here = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(here, "data")

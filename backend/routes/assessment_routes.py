@@ -36,6 +36,7 @@ ASSESSMENT_REQUIRED_FIELDS = [
 ]
 
 
+# Handles assessment submission and returns the results.
 @assessment_bp.post("/assessments")
 def submit_assessment():
     payload = request.get_json(silent=True)

@@ -9,6 +9,7 @@ from db.mongo import get_db
 
 
 class MessageService:
+    # Adds a message to a session.
     @staticmethod
     def add_message(session_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         db = get_db()
@@ -34,6 +35,7 @@ class MessageService:
             "message": "Message stored successfully",
         }
 
+    # Gets all messages for a session.
     @staticmethod
     def get_session_messages(session_id: str) -> list[dict[str, Any]]:
         db = get_db()
@@ -56,6 +58,7 @@ class MessageService:
 
         return messages
 
+    # Deletes a message by id.
     @staticmethod
     def delete_message(message_id: str) -> None:
         db = get_db()

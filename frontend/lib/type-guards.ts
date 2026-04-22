@@ -1,6 +1,7 @@
 
 
 
+// Checks whether the app is running as an iOS PWA.
 export function isIOSPWA(): boolean {
   if (typeof window === 'undefined') {
     return false
@@ -14,6 +15,7 @@ export function isIOSPWA(): boolean {
 }
 
 
+// Checks whether a value is a valid date string.
 export function isValidDateString(value: unknown): value is string {
   if (typeof value !== 'string') {
     return false
@@ -24,21 +26,25 @@ export function isValidDateString(value: unknown): value is string {
 }
 
 
+// Checks whether a value is a non-empty string.
 export function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0
 }
 
 
+// Checks whether a value is a valid number.
 export function isValidNumber(value: unknown): value is number {
   return typeof value === 'number' && !isNaN(value) && isFinite(value)
 }
 
 
+// Checks whether a value is a valid integer.
 export function isValidInteger(value: unknown): value is number {
   return isValidNumber(value) && Number.isInteger(value)
 }
 
 
+// Checks whether a value looks like an email.
 export function isValidEmailFormat(value: unknown): value is string {
   if (typeof value !== 'string') {
     return false

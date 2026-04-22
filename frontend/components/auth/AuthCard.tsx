@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { cn } from '@/frontend/lib/utils'
 
+// Renders the auth card container.
 export function AuthCard({
   children,
   className,
@@ -29,6 +30,7 @@ export function AuthCard({
   )
 }
 
+// Renders the auth page header.
 export function AuthHeader({
   title,
   subtitle,
@@ -78,6 +80,7 @@ export function AuthHeader({
   )
 }
 
+// Renders auth footer links.
 export function AuthFooterLinks({
   mode,
 }: {

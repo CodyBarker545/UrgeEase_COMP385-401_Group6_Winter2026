@@ -9,6 +9,7 @@ from Rag.rag_chain import HashEmbeddings, RAGConfig, UrgeEaseRAGChain, local_cha
 
 
 class LLMService:
+    # Sets up the service with the helpers it needs.
     def __init__(self) -> None:
         self.provider = os.getenv("CHAT_LLM_PROVIDER", "local").strip().lower()
         self.client = None
@@ -46,6 +47,7 @@ class LLMService:
             llm_fn=llm_fn,
         )
 
+    # Extracts text from the LLM response.
     def _extract_text(self, response: Any) -> str:
         # use direct text if the sdk gives it
         text = getattr(response, "text", None)
@@ -69,6 +71,7 @@ class LLMService:
 
         raise RuntimeError("Gemini returned an empty response")
 
+    # Generates text from a raw prompt.
     def _generate_from_prompt(self, prompt: str) -> str:
         if self.client is None:
             raise RuntimeError("Gemini client is not configured")
@@ -79,6 +82,7 @@ class LLMService:
         )
         return self._extract_text(response)
 
+    # Generates a reply for the user question.
     def generate_reply(
         self,
         question: str,
@@ -88,6 +92,7 @@ class LLMService:
         return self.chain.invoke(question, chat_history=chat_history or [])
 
 
+# Returns the shared LLM service.
 @lru_cache(maxsize=1)
 def get_llm_service() -> LLMService:
     # reuse one service instance

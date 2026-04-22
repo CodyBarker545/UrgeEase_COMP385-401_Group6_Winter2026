@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/frontend/lib/utils'
 
+// Renders a card container.
 export function Card({
   className,
   ...props
@@ -16,6 +17,7 @@ export function Card({
   )
 }
 
+// Renders the top part of a card.
 export function CardHeader({
   className,
   ...props
@@ -28,6 +30,7 @@ export function CardHeader({
   )
 }
 
+// Renders a card title.
 export function CardTitle({
   className,
   ...props
@@ -40,6 +43,7 @@ export function CardTitle({
   )
 }
 
+// Renders card description text.
 export function CardDescription({
   className,
   ...props
@@ -52,6 +56,7 @@ export function CardDescription({
   )
 }
 
+// Renders the main card content.
 export function CardContent({
   className,
   ...props

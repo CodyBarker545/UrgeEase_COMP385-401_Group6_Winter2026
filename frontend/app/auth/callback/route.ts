@@ -4,6 +4,7 @@ import { logError } from '@/frontend/lib/errors'
 import { getSupabaseUrl, getSupabaseAnonKey } from '@/frontend/lib/env'
 
 
+// Handles the GET request for this route.
 export async function GET(request: Request) {
   try {
     const requestUrl = new URL(request.url)

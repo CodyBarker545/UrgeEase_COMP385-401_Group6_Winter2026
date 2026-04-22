@@ -28,6 +28,7 @@ const signUpSchema = z
 
 type SignUpValues = z.infer<typeof signUpSchema>
 
+// Shows and handles sign up.
 export default function SignUpPage() {
   const router = useRouter()
 
@@ -46,6 +47,7 @@ export default function SignUpPage() {
     },
   })
 
+  // Handles on submit.
   const onSubmit = async (values: SignUpValues) => {
     const result = await apiSignUp({
       name: values.name,

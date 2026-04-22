@@ -20,6 +20,7 @@ const signInSchema = z.object({
 
 type SignInValues = z.infer<typeof signInSchema>
 
+// Shows and handles sign in.
 export default function SignInPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -53,6 +54,7 @@ export default function SignInPage() {
     }
   }, [searchParams, setError, setValue])
 
+  // Handles on submit.
   const onSubmit = async (values: SignInValues) => {
     const result = await apiSignIn({ email: values.email, password: values.password })
     if (!result.ok || !result.token || !result.user) {
@@ -65,6 +67,7 @@ export default function SignInPage() {
     router.push('/app/home')
   }
 
+  // Handles handle sign out.
   const handleSignOut = () => {
     logout()
     router.refresh()

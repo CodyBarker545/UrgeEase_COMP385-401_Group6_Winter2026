@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: 'UrgeEase terms of service and usage agreement.',
 }
 
+// Handles terms page.
 export default function TermsPage() {
   return (
     <main className="container" style={{ paddingTop: '120px', paddingBottom: '80px', maxWidth: '800px' }}>

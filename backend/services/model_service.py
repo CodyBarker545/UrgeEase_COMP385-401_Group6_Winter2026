@@ -9,6 +9,7 @@ from sklearn.pipeline import Pipeline
 
 
 class ModelService:
+    # Sets up the service with the helpers it needs.
     def __init__(self) -> None:
         base_dir = Path(__file__).resolve().parents[1]
         models_dir = base_dir / "ml_model" / "models"
@@ -24,6 +25,7 @@ class ModelService:
         self.addiction_model: Pipeline = joblib.load(self.addiction_model_path)
         self.users_model: Pipeline = joblib.load(self.users_model_path)
 
+    # Converts a score into a risk label.
     @staticmethod
     def score_to_risk_label(score: int) -> str:
         if 2 <= score <= 4:
@@ -34,6 +36,7 @@ class ModelService:
             return "High"
         return "Unknown"
 
+    # Converts a model class into a dependence label.
     @staticmethod
     def dependence_class_to_label(pred_class: int) -> str:
         mapping = {
@@ -43,6 +46,7 @@ class ModelService:
         }
         return mapping.get(pred_class, "Unknown")
 
+    # Converts model probabilities into a dictionary.
     @staticmethod
     def _to_probability_dict(classes: Any, probabilities: Any) -> dict[str, float]:
         return {
@@ -50,6 +54,7 @@ class ModelService:
             for cls, prob in zip(classes, probabilities)
         }
 
+    # Predicts the addiction score from the request data.
     def predict_addiction_score(self, payload: dict[str, Any]) -> dict[str, Any]:
         df = pd.DataFrame([payload])
 
@@ -70,6 +75,7 @@ class ModelService:
 
         return result
 
+    # Predicts the dependence risk from the request data.
     def predict_dependence_risk(self, payload: dict[str, Any]) -> dict[str, Any]:
         df = pd.DataFrame([payload])
 

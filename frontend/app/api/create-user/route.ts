@@ -3,6 +3,7 @@ import { createServerClient } from '@/frontend/lib/supabase'
 import { logError } from '@/frontend/lib/errors'
 
 
+// Handles the POST request for this route.
 export async function POST(request: Request) {
   try {
     let body

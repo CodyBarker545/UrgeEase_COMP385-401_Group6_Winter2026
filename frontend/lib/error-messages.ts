@@ -36,6 +36,7 @@ export const SUCCESS_MESSAGES = {
 } as const
 
 
+// Gets a friendly error message by key.
 export function getErrorMessage(key: keyof typeof ERROR_MESSAGES): string {
   return ERROR_MESSAGES[key] || ERROR_MESSAGES.GENERIC
 }

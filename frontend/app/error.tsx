@@ -8,6 +8,7 @@ interface ErrorProps {
   reset: () => void
 }
 
+// Shows the error page and lets the user retry.
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
     logError('ErrorBoundary', error, { 

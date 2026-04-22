@@ -3,6 +3,7 @@
 import { z } from 'zod'
 
 
+// Cleans text input.
 export function sanitizeString(input: string): string {
   if (typeof input !== 'string') {
     return ''
@@ -23,6 +24,7 @@ export const whyDocumentSchema = z.string()
     'Invalid characters detected. Please remove any script tags or event handlers.'
   )
 
+// Validates the why document text.
 export function validateWhyDocument(input: string): { valid: boolean; error?: string; sanitized?: string } {
   try {
     const sanitized = sanitizeString(input)
@@ -45,6 +47,7 @@ export const replacementActivitySchema = z.string()
     'Invalid characters detected'
   )
 
+// Validates a replacement activity.
 export function validateReplacementActivity(input: string): { valid: boolean; error?: string; sanitized?: string } {
   try {
     const sanitized = sanitizeString(input)
@@ -67,6 +70,7 @@ export const precursorEventSchema = z.string()
   )
   .optional()
 
+// Validates the precursor event text.
 export function validatePrecursorEvent(input: string): { valid: boolean; error?: string; sanitized?: string } {
   if (!input || input.trim().length === 0) {
     return { valid: true, sanitized: '' }

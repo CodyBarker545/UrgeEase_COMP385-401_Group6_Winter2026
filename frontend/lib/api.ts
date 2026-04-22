@@ -90,6 +90,7 @@ export type AssessmentPayload = {
 
 type BackendPlan = RecoveryPlan
 
+// Reads JSON data from local storage.
 function getJsonStorage<T>(key: string): T | null {
   if (typeof window === 'undefined') return null
 
@@ -101,19 +102,23 @@ function getJsonStorage<T>(key: string): T | null {
   }
 }
 
+// Gets the saved current user.
 function getCurrentUser(): User | null {
   const authState = getJsonStorage<{ state?: { user?: User } }>(AUTH_STORAGE_KEY)
   return authState?.state?.user ?? null
 }
 
+// Gets the saved current user id.
 function getCurrentUserId(): string | null {
   return getCurrentUser()?.id ?? null
 }
 
+// Builds the local backend auth token.
 function buildToken(userId: string): string {
   return `backend_${userId}`
 }
 
+// Converts a backend user into app user data.
 function toUser(user: BackendUser): User {
   return {
     id: user.userId,
@@ -123,6 +128,7 @@ function toUser(user: BackendUser): User {
   }
 }
 
+// Converts a backend session into a summary.
 function toSessionSummary(session: BackendSession): SessionSummary {
   return {
     id: session.sessionId,
@@ -133,6 +139,7 @@ function toSessionSummary(session: BackendSession): SessionSummary {
   }
 }
 
+// Converts a result into a confidence value.
 function toConfidence(result: BackendResult): number {
   const numericScore = typeof result.addictionScore === 'number' ? result.addictionScore : null
   if (numericScore !== null) {
@@ -146,6 +153,7 @@ function toConfidence(result: BackendResult): number {
   return 50
 }
 
+// Sends a request to the backend API.
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BACKEND_URL}${path}`, {
     ...init,
@@ -163,6 +171,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T
 }
 
+// Creates a new account.
 export async function signUp(data: SignUpRequest): Promise<AuthResponse> {
   try {
     const result = await apiRequest<BackendUser>('/api/auth/register', {
@@ -190,6 +199,7 @@ export async function signUp(data: SignUpRequest): Promise<AuthResponse> {
   }
 }
 
+// Verifies an email code.
 export async function verifyEmail(data: VerifyEmailRequest): Promise<AuthResponse> {
   try {
     const storedCode = typeof window !== 'undefined' ? sessionStorage.getItem(`verify_${data.email}`) : null
@@ -221,6 +231,7 @@ export async function verifyEmail(data: VerifyEmailRequest): Promise<AuthRespons
   }
 }
 
+// Signs in an existing user.
 export async function signIn(data: SignInRequest): Promise<AuthResponse> {
   try {
     const result = await apiRequest<BackendUser>('/api/auth/login', {
@@ -240,6 +251,7 @@ export async function signIn(data: SignInRequest): Promise<AuthResponse> {
   }
 }
 
+// Gets the current saved user.
 export async function getMe(): Promise<User | null> {
   const userId = getCurrentUserId()
   if (!userId) return null
@@ -252,6 +264,7 @@ export async function getMe(): Promise<User | null> {
   }
 }
 
+// Creates a new backend session.
 export async function createSession(data: CreateSessionRequest): Promise<{ sessionId: string }> {
   const userId = getCurrentUserId()
   if (!userId) {
@@ -269,6 +282,7 @@ export async function createSession(data: CreateSessionRequest): Promise<{ sessi
   return { sessionId: result.sessionId }
 }
 
+// Submits assessment answers to the backend.
 export async function submitAssessment(
   answers: AssessmentPayload
 ): Promise<{
@@ -302,6 +316,7 @@ export async function submitAssessment(
   })
 }
 
+// Gets the current recovery plan.
 export async function getActivePlan(): Promise<RecoveryPlan | null> {
   const userId = getCurrentUserId()
   if (!userId) return null
@@ -313,6 +328,7 @@ export async function getActivePlan(): Promise<RecoveryPlan | null> {
   }
 }
 
+// Updates one recovery plan action.
 export async function updatePlanAction(planId: string, actionId: string, completed: boolean): Promise<RecoveryPlan> {
   return apiRequest<BackendPlan>(`/api/plans/${planId}/actions/${actionId}`, {
     method: 'PATCH',
@@ -320,6 +336,7 @@ export async function updatePlanAction(planId: string, actionId: string, complet
   })
 }
 
+// Gets the current user sessions.
 export async function getSessions(): Promise<SessionSummary[]> {
   const userId = getCurrentUserId()
   if (!userId) return []
@@ -328,6 +345,7 @@ export async function getSessions(): Promise<SessionSummary[]> {
   return result.sessions.map(toSessionSummary)
 }
 
+// Gets messages for one session.
 export async function getSessionMessages(sessionId: string): Promise<Message[]> {
   const [session, messages] = await Promise.all([
     apiRequest<BackendSession>(`/api/sessions/detail/${sessionId}`),
@@ -344,6 +362,7 @@ export async function getSessionMessages(sessionId: string): Promise<Message[]> 
   }))
 }
 
+// Sends one chat message.
 export async function sendMessage(data: SendMessageRequest): Promise<SendMessageResponse> {
   const userId = getCurrentUserId()
   if (!userId) {
@@ -375,6 +394,7 @@ export async function sendMessage(data: SendMessageRequest): Promise<SendMessage
   }
 }
 
+// Gets the current user results.
 export async function getResults(): Promise<ResultsSummary> {
   const userId = getCurrentUserId()
   if (!userId) {
@@ -415,6 +435,7 @@ export async function getResults(): Promise<ResultsSummary> {
   }
 }
 
+// Gets details for one addiction result.
 export async function getAddictionDetail(addictionId: string): Promise<AddictionDetail | null> {
   try {
     const result = await apiRequest<BackendResult>(`/api/results/${addictionId}`)
@@ -443,10 +464,12 @@ export async function getAddictionDetail(addictionId: string): Promise<Addiction
   }
 }
 
+// Starts a user data export.
 export async function exportData(): Promise<{ downloadUrl: null }> {
   return { downloadUrl: null }
 }
 
+// Deletes the current account.
 export async function deleteAccount(): Promise<{ ok: boolean }> {
   const userId = getCurrentUserId()
   if (!userId) {

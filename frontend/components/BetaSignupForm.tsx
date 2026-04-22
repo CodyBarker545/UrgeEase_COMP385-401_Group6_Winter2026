@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react'
 
+// Shows and submits the beta signup form.
 export default function BetaSignupForm() {
   const [email, setEmail] = useState('')
   const [honeypot, setHoneypot] = useState('') 
@@ -9,6 +10,7 @@ export default function BetaSignupForm() {
   const [message, setMessage] = useState('')
   const [formStartTime] = useState(() => Date.now()) 
 
+  // Submits the form data.
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     

@@ -9,10 +9,12 @@ interface OnboardingOptInProps {
   userId: string
 }
 
+// Shows the onboarding opt-in card.
 export default function OnboardingOptIn({ userId }: OnboardingOptInProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
+  // Handles handle setup.
   const handleSetup = async () => {
     setLoading(true)
     try {
@@ -30,6 +32,7 @@ export default function OnboardingOptIn({ userId }: OnboardingOptInProps) {
     }
   }
 
+  // Handles handle skip.
   const handleSkip = async () => {
     setLoading(true)
     try {

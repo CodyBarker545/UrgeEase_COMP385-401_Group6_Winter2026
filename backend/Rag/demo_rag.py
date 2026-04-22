@@ -5,6 +5,7 @@ import os
 from Rag.rag_chain import RAGConfig, HashEmbeddings, UrgeEaseRAGChain
 
 
+# Runs this script from the command line.
 def main() -> None:
     here = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(here, "data")

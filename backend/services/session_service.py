@@ -9,6 +9,7 @@ from db.mongo import get_db
 
 
 class SessionService:
+    # Creates a new chat or voice session.
     @staticmethod
     def create_session(payload: dict[str, Any]) -> dict[str, Any]:
         db = get_db()
@@ -33,6 +34,7 @@ class SessionService:
             "message": "Session created successfully",
         }
 
+    # Gets all sessions for a user.
     @staticmethod
     def get_user_sessions(user_id: str) -> list[dict[str, Any]]:
         db = get_db()
@@ -57,6 +59,7 @@ class SessionService:
 
         return sessions
 
+    # Gets details for one session.
     @staticmethod
     def get_session_detail(session_id: str) -> dict[str, Any] | None:
         db = get_db()
@@ -78,6 +81,7 @@ class SessionService:
             "localOnly": session.get("localOnly", False),
         }
 
+    # Marks a session as completed.
     @staticmethod
     def complete_session(session_id: str) -> None:
         db = get_db()
@@ -95,6 +99,7 @@ class SessionService:
         if result.matched_count == 0:
             raise ValueError("Session not found")
 
+    # Archives a session.
     @staticmethod
     def archive_session(session_id: str) -> None:
         db = get_db()

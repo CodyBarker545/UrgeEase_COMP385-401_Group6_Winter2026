@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { getAddictionDetail } from '@/frontend/lib/api'
 import type { AddictionDetail, TriggerCategory } from '@/frontend/lib/types'
 
+// Shows details for one addiction result.
 export default function AddictionDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function AddictionDetailPage() {
   const [openEvidence, setOpenEvidence] = useState(false)
 
   useEffect(() => {
+    // Loads one result detail record.
     async function loadDetail() {
       const data = await getAddictionDetail(addictionId)
       setDetail(data)

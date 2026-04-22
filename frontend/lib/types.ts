@@ -185,6 +185,7 @@ export interface SignInResponse {
 
 export const AUTH_TIMEOUT_MS = 15000
 
+// Creates a promise that rejects after a timeout.
 export function createTimeoutPromise(timeoutMs: number): Promise<never> {
   return new Promise((_, reject) => {
     setTimeout(() => {
@@ -197,6 +198,7 @@ export function createTimeoutPromise(timeoutMs: number): Promise<never> {
   })
 }
 
+// Normalizes auth errors for the UI.
 export function normalizeAuthError(error: unknown): NormalizedAuthError {
   if (!error) {
     return { message: 'Unknown authentication error', originalError: error }

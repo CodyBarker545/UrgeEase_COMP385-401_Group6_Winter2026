@@ -9,12 +9,14 @@ interface PersonalizationBannerProps {
   userId?: string
 }
 
+// Shows a banner when personalization is available.
 export default function PersonalizationBanner({ userId }: PersonalizationBannerProps) {
   const router = useRouter()
   const [showBanner, setShowBanner] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Handles check status.
     const checkStatus = async () => {
       if (!userId) {
         setLoading(false)

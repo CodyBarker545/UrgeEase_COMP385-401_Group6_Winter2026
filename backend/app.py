@@ -18,6 +18,7 @@ from routes.plan_routes import plan_bp
 load_dotenv()
 
 
+# Creates and configures the Flask app.
 def create_app() -> Flask:
     # create flask app
     app = Flask(__name__)
@@ -33,16 +34,19 @@ def create_app() -> Flask:
     app.register_blueprint(assessment_bp, url_prefix="/api")
     app.register_blueprint(plan_bp, url_prefix="/api")
 
+    # Returns a basic API welcome response.
     @app.get("/")
     def root():
         # basic app check
         return jsonify({"message": "UrgeEase backend is running"}), 200
 
+    # Returns a simple health check response.
     @app.get("/health")
     def health():
         # health check
         return jsonify({"status": "ok"}), 200
 
+    # Checks whether the database connection is working.
     @app.get("/db-test")
     def db_test():
         # quick db check

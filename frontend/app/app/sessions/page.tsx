@@ -7,12 +7,14 @@ import { MessageSquare, Mic, Calendar } from 'lucide-react'
 import { getSessions, createSession } from '@/frontend/lib/api'
 import type { SessionSummary } from '@/frontend/lib/types'
 
+// Shows the user session list.
 export default function SessionsPage() {
   const router = useRouter()
   const [sessions, setSessions] = useState<SessionSummary[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Loads the user session list.
     async function loadSessions() {
       const data = await getSessions()
       setSessions(data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
@@ -21,6 +23,7 @@ export default function SessionsPage() {
     loadSessions()
   }, [])
 
+  // Handles handle new chat.
   const handleNewChat = async () => {
     const { sessionId } = await createSession({ mode: 'chat' })
     router.push(`/app/session/chat?sessionId=${sessionId}`)

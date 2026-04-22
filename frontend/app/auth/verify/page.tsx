@@ -20,6 +20,7 @@ const verifySchema = z.object({
 
 type VerifyValues = z.infer<typeof verifySchema>
 
+// Shows and handles email verification.
 export default function VerifyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -43,6 +44,7 @@ export default function VerifyPage() {
     }
   }, [email, router])
 
+  // Handles on submit.
   const onSubmit = async (values: VerifyValues) => {
     if (!values.code || values.code.length !== 6) {
       setError('code', {

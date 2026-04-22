@@ -6,6 +6,7 @@ import { useAuth } from '@/frontend/contexts/AuthContext'
 import { createClientSupabase } from '@/frontend/lib/supabase'
 import OnboardingOptIn from '@/frontend/components/OnboardingOptIn'
 
+// Handles onboarding check page.
 export default function OnboardingCheckPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function OnboardingCheckPage() {
   const [personalizationStatus, setPersonalizationStatus] = useState<string | null>(null)
 
   useEffect(() => {
+    // Handles check personalization.
     const checkPersonalization = async () => {
       if (!user) {
         router.push('/login')

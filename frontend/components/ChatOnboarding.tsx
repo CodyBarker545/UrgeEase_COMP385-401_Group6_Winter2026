@@ -62,6 +62,7 @@ const CONVERSATION_STEPS: ConversationStep[] = [
 ]
 
 
+// Runs the chat onboarding experience.
 export default function ChatOnboarding({ userId, onComplete, initialMode = 'onboarding', onPanicClick }: ChatOnboardingProps) {
   const router = useRouter()
   const { user, signOut } = useAuth()
@@ -85,6 +86,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Updates layout state after the window resizes.
     const handleResize = () => {
       const viewportHeight = window.visualViewport?.height || window.innerHeight
       const windowHeight = window.innerHeight
@@ -121,6 +123,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
           timestamp: new Date(),
         }
         setMessages([welcomeMessage])
+        // Handles load replacements.
         const loadReplacements = async () => {
           try {
             const supabase = createClientSupabase()
@@ -167,6 +170,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
     }
   }, [mode, userId, messages.length]) 
 
+  // Updates profile.
   const updateProfile = useCallback(async (field: string, value: any) => {
     try {
       const supabase = createClientSupabase()
@@ -187,6 +191,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
     }
   }, [userId, currentStep])
 
+  // Handles add assistant message.
   const addAssistantMessage = useCallback((content: string) => {
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -197,6 +202,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
     setMessages(prev => [...prev, newMessage])
   }, [])
 
+  // Handles handle send message.
   const handleSendMessage = useCallback(async (text?: string, isQuickReply = false) => {
     const messageText = text || inputValue.trim()
     if (!messageText) return
@@ -339,6 +345,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
     }
   }, [inputValue, currentStep, conversationData, updateProfile, addAssistantMessage, onComplete, mode])
 
+  // Handles handle quick reply.
   const handleQuickReply = useCallback((reply: string) => {
     const messageText = reply.trim()
     if (!messageText) return
@@ -457,6 +464,7 @@ export default function ChatOnboarding({ userId, onComplete, initialMode = 'onbo
     }, 1000 + Math.random() * 1000)
   }, [currentStep, conversationData, updateProfile, addAssistantMessage, onComplete, mode, handleSendMessage])
 
+  // Handles keyboard input for the chat box.
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()

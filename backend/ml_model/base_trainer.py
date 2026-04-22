@@ -16,6 +16,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 class BaseRandomForestTrainer(ABC):
+    # Sets up the service with the helpers it needs.
     def __init__(
         self,
         data_file: Path,
@@ -29,11 +30,13 @@ class BaseRandomForestTrainer(ABC):
         self.test_size = test_size
         self.pipeline: Pipeline | None = None
 
+    # Loads data and prepares features and labels.
     @abstractmethod
     def load_and_prepare_data(self) -> tuple[pd.DataFrame, pd.Series]:
         """Load raw CSV and return X, y."""
         raise NotImplementedError
 
+    # Builds the machine learning training pipeline.
     def build_pipeline(self, X: pd.DataFrame) -> Pipeline:
         numeric_features = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
         categorical_features = X.select_dtypes(include=["object", "bool"]).columns.tolist()
@@ -73,6 +76,7 @@ class BaseRandomForestTrainer(ABC):
             ]
         )
 
+    # Trains the model and returns the split data.
     def train(self) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
         X, y = self.load_and_prepare_data()
 
@@ -93,6 +97,7 @@ class BaseRandomForestTrainer(ABC):
 
         return X_test, y_test
 
+    # Prints model evaluation results.
     def evaluate(self, X_test: pd.DataFrame, y_test: pd.Series) -> None:
         if self.pipeline is None:
             raise ValueError("Pipeline has not been trained yet.")
@@ -108,6 +113,7 @@ class BaseRandomForestTrainer(ABC):
         print("\nConfusion Matrix:")
         print(confusion_matrix(y_test, y_pred))
 
+    # Saves the trained model to disk.
     def save_model(self) -> None:
         if self.pipeline is None:
             raise ValueError("No trained pipeline to save.")
@@ -116,6 +122,7 @@ class BaseRandomForestTrainer(ABC):
         joblib.dump(self.pipeline, self.model_file)
         print(f"\nModel saved to {self.model_file}")
 
+    # Runs the full training flow.
     def run(self) -> None:
         X_test, y_test = self.train()
         self.evaluate(X_test, y_test)

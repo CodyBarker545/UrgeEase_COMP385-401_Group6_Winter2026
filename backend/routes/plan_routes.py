@@ -8,6 +8,7 @@ plan_bp = Blueprint("plan", __name__)
 plan_service = PlanService()
 
 
+# Gets the active plan for a user.
 @plan_bp.get("/plans/user/<user_id>/active")
 def get_active_plan(user_id: str):
     try:
@@ -21,6 +22,7 @@ def get_active_plan(user_id: str):
         return jsonify({"error": f"Fetch active plan failed: {exc}"}), 500
 
 
+# Updates whether a plan action is completed.
 @plan_bp.patch("/plans/<plan_id>/actions/<action_id>")
 def update_action_status(plan_id: str, action_id: str):
     payload = request.get_json(silent=True)

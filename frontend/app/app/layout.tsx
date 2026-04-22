@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore, useOnboardingStore } from '@/frontend/lib/store'
 import { AppShell } from '@/frontend/components/app/AppShell'
 
+// Handles app layout.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()

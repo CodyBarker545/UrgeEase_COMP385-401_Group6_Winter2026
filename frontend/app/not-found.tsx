@@ -1,3 +1,4 @@
+// Shows the not found page.
 export default function NotFound() {
   return (
     <div style={{

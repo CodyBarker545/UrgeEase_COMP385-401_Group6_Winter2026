@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { redirect, useSearchParams } from 'next/navigation'
 
+// Handles legacy login page.
 export default function LegacyLoginPage() {
   const searchParams = useSearchParams()
 

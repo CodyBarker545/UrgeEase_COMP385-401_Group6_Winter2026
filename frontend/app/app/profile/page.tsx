@@ -8,6 +8,7 @@ import { getResults, getSessions } from '@/frontend/lib/api'
 import { readOnboardingState } from '@/frontend/lib/onboarding'
 import type { ResultsSummary, SessionSummary } from '@/frontend/lib/types'
 
+// Shows the user profile page.
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user)
   const [loading, setLoading] = useState(true)
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const [averageIntensity, setAverageIntensity] = useState(0)
 
   useEffect(() => {
+    // Loads the data needed for this page.
     async function loadData() {
       const [resultsData, sessionsData] = await Promise.all([getResults(), getSessions()])
       const onboarding = readOnboardingState()

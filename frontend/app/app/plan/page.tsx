@@ -6,12 +6,14 @@ import { CheckCircle2, Circle, ListChecks } from 'lucide-react'
 import { getActivePlan, updatePlanAction } from '@/frontend/lib/api'
 import type { RecoveryPlan } from '@/frontend/lib/types'
 
+// Shows the active recovery plan.
 export default function PlanPage() {
   const [plan, setPlan] = useState<RecoveryPlan | null>(null)
   const [loading, setLoading] = useState(true)
   const [updatingAction, setUpdatingAction] = useState<string | null>(null)
 
   useEffect(() => {
+    // Loads the active recovery plan.
     async function loadPlan() {
       const data = await getActivePlan()
       setPlan(data)
@@ -21,6 +23,7 @@ export default function PlanPage() {
     loadPlan()
   }, [])
 
+  // Handles toggle action.
   const toggleAction = async (actionId: string, completed: boolean) => {
     if (!plan) return
     setUpdatingAction(actionId)

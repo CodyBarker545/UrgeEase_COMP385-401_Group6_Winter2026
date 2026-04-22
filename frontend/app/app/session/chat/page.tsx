@@ -7,6 +7,7 @@ import { getSessionMessages, sendMessage } from '@/frontend/lib/api'
 import type { Message } from '@/frontend/lib/types'
 import { CrisisModal } from '@/frontend/components/app/CrisisModal'
 
+// Shows the chat session page.
 export default function ChatSessionPage() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('sessionId') || ''
@@ -20,6 +21,7 @@ export default function ChatSessionPage() {
 
   useEffect(() => {
     if (!sessionId) return
+    // Loads messages for the current session.
     async function loadMessages() {
       try {
         const data = await getSessionMessages(sessionId)
@@ -38,6 +40,7 @@ export default function ChatSessionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Handles handle send.
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || !sessionId || sending) return

@@ -9,9 +9,11 @@ from db.mongo import get_db
 
 
 class PlanService:
+    # Sets up the service with the helpers it needs.
     def __init__(self) -> None:
         self.db = get_db()
 
+    # Converts a string id into a MongoDB ObjectId.
     @staticmethod
     def _to_object_id(raw_id: str, field_name: str) -> ObjectId:
         normalized = str(raw_id).strip()
@@ -19,6 +21,7 @@ class PlanService:
             raise ValueError(f"{field_name} is required")
         return ObjectId(normalized)
 
+    # Converts a value to an integer when possible.
     @staticmethod
     def _to_int(raw_value: Any) -> int | None:
         try:
@@ -26,6 +29,7 @@ class PlanService:
         except (TypeError, ValueError):
             return None
 
+    # Chooses the main plan focus area from answers.
     def _determine_focus_area(self, answers: dict[str, Any]) -> tuple[str, str]:
         scores = {
             "distractibility": max(
@@ -56,6 +60,7 @@ class PlanService:
         }
         return focus_area, summary_map[focus_area]
 
+    # Builds the default recovery actions for a focus area.
     @staticmethod
     def _build_actions(focus_area: str) -> list[dict[str, Any]]:
         templates = {
@@ -94,6 +99,7 @@ class PlanService:
             )
         return actions
 
+    # Builds plan actions from trigger recommendations.
     @staticmethod
     def _build_trigger_actions(recommendations: list[str]) -> list[dict[str, Any]]:
         actions: list[dict[str, Any]] = []
@@ -109,6 +115,7 @@ class PlanService:
             )
         return actions
 
+    # Creates a recovery plan for an assessment.
     def create_plan(
         self,
         *,
@@ -159,6 +166,7 @@ class PlanService:
         inserted = self.db.plans.insert_one(plan_doc)
         return self.get_plan_by_id(str(inserted.inserted_id))
 
+    # Gets the active plan for a user.
     def get_active_plan(self, user_id: str) -> dict[str, Any] | None:
         plan = self.db.plans.find_one(
             {"userId": self._to_object_id(user_id, "userId"), "status": "active"},
@@ -168,12 +176,14 @@ class PlanService:
             return None
         return self._serialize_plan(plan)
 
+    # Gets a recovery plan by id.
     def get_plan_by_id(self, plan_id: str) -> dict[str, Any] | None:
         plan = self.db.plans.find_one({"_id": self._to_object_id(plan_id, "planId")})
         if not plan:
             return None
         return self._serialize_plan(plan)
 
+    # Updates whether a plan action is completed.
     def update_action_status(self, plan_id: str, action_id: str, completed: bool) -> dict[str, Any]:
         plan_object_id = self._to_object_id(plan_id, "planId")
         result = self.db.plans.update_one(
@@ -187,6 +197,7 @@ class PlanService:
             raise ValueError("Plan not found")
         return updated
 
+    # Converts a plan document into API output.
     @staticmethod
     def _serialize_plan(plan: dict[str, Any]) -> dict[str, Any]:
         return {

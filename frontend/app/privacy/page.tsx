@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: 'UrgeEase privacy policy. Learn how we protect your data.',
 }
 
+// Handles privacy page.
 export default function PrivacyPage() {
   return (
     <main className="container" style={{ paddingTop: '120px', paddingBottom: '80px', maxWidth: '800px' }}>

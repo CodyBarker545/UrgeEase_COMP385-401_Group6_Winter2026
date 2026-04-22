@@ -234,6 +234,7 @@ const sections: Array<{ title: string; description: string; fields: Field[] }> =
 const fieldClass =
   'h-10 w-full rounded-lg border border-black/10 bg-white/70 px-3 text-sm text-[var(--color-text-dark)] shadow-sm transition focus:border-[var(--color-accent)] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgba(227,155,99,0.18)] dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10'
 
+// Shows and submits the assessment form.
 export default function AssessmentPage() {
   const user = useAuthStore((state) => state.user)
   const [form, setForm] = useState<FormState>(initialForm)
@@ -242,6 +243,7 @@ export default function AssessmentPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Updates form state when a field changes.
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setForm((current) => ({
@@ -251,6 +253,7 @@ export default function AssessmentPage() {
     }))
   }
 
+  // Submits the form data.
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
@@ -282,6 +285,7 @@ export default function AssessmentPage() {
     }
   }
 
+  // Resets the assessment form.
   const handleReset = () => {
     setForm(initialForm)
     setPrediction(null)
@@ -289,6 +293,7 @@ export default function AssessmentPage() {
     setError(null)
   }
 
+  // Renders one assessment input field.
   const renderField = (field: Field) => (
     <label key={field.name} className="block space-y-1">
       <span className="flex min-h-8 items-end text-[13px] font-semibold leading-4 text-[var(--color-text-dark)]">

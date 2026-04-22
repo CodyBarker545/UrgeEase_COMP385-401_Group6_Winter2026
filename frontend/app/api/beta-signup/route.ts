@@ -22,6 +22,7 @@ let requestCount = 0
 const CLEANUP_INTERVAL = 100 
 
 
+// Removes old rate limit entries.
 function cleanupExpiredEntries(now: number): void {
   const keysToDelete: string[] = []
   for (const [key, value] of rateLimitMap.entries()) {
@@ -32,6 +33,7 @@ function cleanupExpiredEntries(now: number): void {
   keysToDelete.forEach(key => rateLimitMap.delete(key))
 }
 
+// Checks whether an IP can submit the form.
 function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now()
   const record = rateLimitMap.get(ip)
@@ -53,6 +55,7 @@ function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: RATE_LIMIT - record.count }
 }
 
+// Gets the best client IP from request headers.
 function getClientIP(headersList: Headers): string {
   const vercelForwarded = headersList.get('x-vercel-forwarded-for')
   if (vercelForwarded) {
@@ -65,6 +68,7 @@ function getClientIP(headersList: Headers): string {
   return headersList.get('x-real-ip') || 'unknown'
 }
 
+// Handles the POST request for this route.
 export async function POST(request: Request) {
   try {
     const headersList = headers()

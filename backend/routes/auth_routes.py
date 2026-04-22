@@ -12,6 +12,7 @@ REGISTER_REQUIRED = ["email", "password", "preferredName"]
 LOGIN_REQUIRED = ["email", "password"]
 
 
+# Registers a new user account.
 @auth_bp.post("/auth/register")
 def register():
     payload = request.get_json(silent=True)
@@ -32,6 +33,7 @@ def register():
         return jsonify({"error": f"Registration failed: {exc}"}), 500
 
 
+# Logs in an existing user.
 @auth_bp.post("/auth/login")
 def login():
     payload = request.get_json(silent=True)
@@ -52,6 +54,7 @@ def login():
         return jsonify({"error": f"Login failed: {exc}"}), 500
 
 
+# Gets a user by id.
 @auth_bp.get("/auth/user/<user_id>")
 def get_user(user_id: str):
     try:
@@ -63,6 +66,7 @@ def get_user(user_id: str):
         return jsonify({"error": f"Fetch user failed: {exc}"}), 500
 
 
+# Updates a user by id.
 @auth_bp.patch("/auth/user/<user_id>")
 def update_user(user_id: str):
     payload = request.get_json(silent=True)
@@ -79,6 +83,7 @@ def update_user(user_id: str):
         return jsonify({"error": f"Update user failed: {exc}"}), 500
 
 
+# Soft deletes a user by id.
 @auth_bp.delete("/auth/user/<user_id>")
 def delete_user(user_id: str):
     try:

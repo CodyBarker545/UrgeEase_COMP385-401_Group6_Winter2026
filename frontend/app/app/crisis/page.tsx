@@ -2,6 +2,7 @@
 
 import { Phone, MessageCircle, Globe } from 'lucide-react'
 
+// Shows the crisis support page.
 export default function CrisisPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">

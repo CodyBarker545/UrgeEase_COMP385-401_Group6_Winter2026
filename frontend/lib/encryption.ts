@@ -1,6 +1,7 @@
 
 
 
+// Applies simple local text obfuscation.
 function simpleEncrypt(text: string, key: string): string {
   let result = ''
   for (let i = 0; i < text.length; i++) {
@@ -9,6 +10,7 @@ function simpleEncrypt(text: string, key: string): string {
   return btoa(result) 
 }
 
+// Reverses simple local text obfuscation.
 function simpleDecrypt(encrypted: string, key: string): string {
   try {
     const text = atob(encrypted) 
@@ -23,6 +25,7 @@ function simpleDecrypt(encrypted: string, key: string): string {
 }
 
 
+// Gets the local storage encryption key.
 function getEncryptionKey(): string {
   if (typeof window === 'undefined') {
     return 'default-key-change-in-production'
@@ -38,6 +41,7 @@ function getEncryptionKey(): string {
 }
 
 
+// Encrypts sensitive text for storage.
 export function encryptSensitiveData(data: string): string {
   try {
     const key = getEncryptionKey()
@@ -50,6 +54,7 @@ export function encryptSensitiveData(data: string): string {
 }
 
 
+// Decrypts sensitive text from storage.
 export function decryptSensitiveData(encrypted: string): string {
   try {
     const key = getEncryptionKey()
@@ -65,6 +70,7 @@ export function decryptSensitiveData(encrypted: string): string {
 }
 
 
+// Checks whether text has the encrypted marker.
 function isEncrypted(data: string): boolean {
   try {
     if (data.startsWith('{') || data.startsWith('[')) {
@@ -78,6 +84,7 @@ function isEncrypted(data: string): boolean {
 }
 
 
+// Reads encrypted data from local storage.
 export function readEncryptedStorage(key: string): string | null {
   if (typeof window === 'undefined') {
     return null
@@ -99,6 +106,7 @@ export function readEncryptedStorage(key: string): string | null {
 }
 
 
+// Writes encrypted data to local storage.
 export function writeEncryptedStorage(key: string, data: string): boolean {
   if (typeof window === 'undefined') {
     return false

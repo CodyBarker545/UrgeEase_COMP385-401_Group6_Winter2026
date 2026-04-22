@@ -10,6 +10,7 @@ from db.mongo import get_db
 
 
 class AuthService:
+    # Creates a new user record.
     @staticmethod
     def register_user(payload: dict[str, Any]) -> dict[str, Any]:
         db = get_db()
@@ -40,6 +41,7 @@ class AuthService:
             "emailVerified": user_doc["emailVerified"],
         }
 
+    # Checks login details and returns the user.
     @staticmethod
     def login_user(payload: dict[str, Any]) -> dict[str, Any]:
         db = get_db()
@@ -65,6 +67,7 @@ class AuthService:
             "emailVerified": user["emailVerified"],
         }
 
+    # Gets a user by id.
     @staticmethod
     def get_user(user_id: str) -> dict[str, Any] | None:
         db = get_db()
@@ -87,6 +90,7 @@ class AuthService:
             "syncConsent": user.get("syncConsent", False),
         }
 
+    # Updates a user by id.
     @staticmethod
     def update_user(user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         db = get_db()
@@ -113,6 +117,7 @@ class AuthService:
 
         return updated_user
 
+    # Marks a user as deleted.
     @staticmethod
     def soft_delete_user(user_id: str) -> None:
         db = get_db()

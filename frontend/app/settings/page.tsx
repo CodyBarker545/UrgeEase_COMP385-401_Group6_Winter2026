@@ -23,6 +23,7 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 
+// Shows account and app settings.
 export default function SettingsPage() {
   const { user, signOut, loading } = useAuth()
   const router = useRouter()
@@ -42,6 +43,7 @@ export default function SettingsPage() {
     }
   }, [user, loading, router])
 
+  // Handles load settings.
   const loadSettings = useCallback(async () => {
     if (!user) return
 
@@ -98,6 +100,7 @@ export default function SettingsPage() {
   }, [user, loadSettings])
 
   
+  // Handles handle save why.
   const handleSaveWhy = async () => {
     if (!user) return
     const validation = validateWhyDocument(whyDocument)
@@ -139,6 +142,7 @@ export default function SettingsPage() {
     }
   }
 
+  // Handles handle update replacement.
   const handleUpdateReplacement = async (index: number, newValue: string) => {
     if (!user) return
     
@@ -204,6 +208,7 @@ export default function SettingsPage() {
     }
   }
 
+  // Handles handle add replacement.
   const handleAddReplacement = () => {
     if (replacementBehaviors.length >= EXERCISE.REPLACEMENT_ACTIVITIES_MAX) {
       alert(`Maximum ${EXERCISE.REPLACEMENT_ACTIVITIES_MAX} replacement activities allowed.`)
@@ -212,6 +217,7 @@ export default function SettingsPage() {
     setReplacementBehaviors([...replacementBehaviors, ''])
   }
 
+  // Handles handle remove replacement.
   const handleRemoveReplacement = async (index: number) => {
     if (!user) return
 
@@ -249,12 +255,14 @@ export default function SettingsPage() {
     }
   }
 
+  // Handles handle toggle privacy mode.
   const handleTogglePrivacyMode = () => {
     const newValue = !privacyMode
     setPrivacyMode(newValue)
     localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, String(newValue))
   }
 
+  // Handles handle export data.
   const handleExportData = async () => {
     if (!user || exporting) return
 
@@ -294,6 +302,7 @@ export default function SettingsPage() {
   }
 
   
+  // Handles handle delete account.
   const handleDeleteAccount = async () => {
     if (!user || deleteInput !== 'DELETE') return
 
